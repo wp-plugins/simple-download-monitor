@@ -4,7 +4,7 @@ Donate link:
 Tags: files, counter, count, tracking, download monitor, monitor, downloads, download
 Requires at least: 2.8.0
 Tested up to: 2.8.4
-Stable tag: 0.05
+Stable tag: 0.06
 
 Count the number of downloads without having to maintain a comprehensive download page.
 
@@ -61,6 +61,9 @@ Nobody asked any yet.
 3. Detailed statistics for a file
 
 == Changelog ==
+
+= 0.06 =
+* Fixed a bug on download display if no downloads were recorded.
 
 = 0.05 =
 * First intentional public release.

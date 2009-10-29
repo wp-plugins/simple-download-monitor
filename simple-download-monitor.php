@@ -4,7 +4,7 @@
 Plugin Name: Simple Download Monitor
 Plugin URI: http://www.pepak.net/wordpress/simple-download-monitor-plugin
 Description: Count the number of downloads without having to maintain a comprehensive download page.
-Version: 0.05
+Version: 0.06
 Author: Pepak
 Author URI: http://www.pepak.net
 */
@@ -31,7 +31,7 @@ if (!class_exists('SimpleDownloadMonitor'))
 	class SimpleDownloadMonitor
 	{
 
-		const VERSION = '0.05';
+		const VERSION = '0.06';
 		const PREFIX = 'sdmon_';
 		const PREG_DELIMITER = '`';
 		const GET_PARAM = 'sdmon';
@@ -389,10 +389,11 @@ if (!class_exists('SimpleDownloadMonitor'))
 			$totalcount = $wpdb->get_var("SELECT COUNT(*) FROM ${table_downloads} ${where}");
 			$results = $wpdb->get_results($sql, ARRAY_N);
 			$rownum = intval($options['from']);
-			foreach ($results as $row) {
-				$rownum++;
-				list($download, $filename, $count, $date, $exists) = $row;
-				?>
+			if (is_array($results)) {
+				foreach ($results as $row) {
+					$rownum++;
+					list($download, $filename, $count, $date, $exists) = $row;
+					?>
 	<tr<?php if (!$exists) echo ' class="not-exist"'; ?>>
 		<td><?php echo $rownum; ?>.</td>
 		<td><?php if ($detailed): ?><a href="<?php echo $this->GetUrlForList(array('download' => $download)); ?>"><?php endif; echo htmlspecialchars($filename); if ($detailed): ?></a><?php endif; ?></td>
@@ -400,6 +401,7 @@ if (!class_exists('SimpleDownloadMonitor'))
 		<td><?php echo mysql2date('Y-m-d h:i:s', $date, TRUE); ?></td>
 	</tr>
 	</tbody><?php
+				}
 			}
 		?>
 </table>
