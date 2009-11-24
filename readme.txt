@@ -4,7 +4,7 @@ Donate link:
 Tags: files, counter, count, tracking, download monitor, monitor, downloads, download
 Requires at least: 2.8.0
 Tested up to: 2.8.4
-Stable tag: 0.06
+Stable tag: 0.07
 
 Count the number of downloads without having to maintain a comprehensive download page.
 
@@ -50,9 +50,31 @@ username of people who download my files.
 
 == Frequently Asked Questions ==
 
-= Where are the frequently asked questions?
+= Why don't I see any files in the download statistics?
 
-Nobody asked any yet.
+Because nobody downloaded any file yet. Simple Download Monitor does not
+scan all available files and assign "zero" downloads to them; instead, it
+starts with an empty list and populates it with attempted downloads. If
+you want to see something, just try to download one of the monitored files.
+
+= Simple Download Monitor doesn't monitor my downloads. Why?
+
+The most common cause is that your webhoster doesn't support user-definable
+.htaccess and/or mod_rewrite, both of which are required for the expected
+(standard) behavior of Simple Download Monitor. The second common cause is
+a misconfigured .htaccess.
+
+You can verify that Simple Download Monitor itself is running by using a
+specially-formatted URL for download: instead of 
+`http://www.mywebsite.com/files/somefile.zip`
+try this URL:
+`http://www.mywebsite.com/index.php?sdmon=files/somefile.zip`
+This URL calls Simple Download Monitor directly, without any interaction
+with mod_rewrite, and should therefore work at all times (unless there
+is a bug in Simple Download Monitor or its installation went wrong). If
+it succeeds, you know the problem lies either in your .htaccess file or
+in the fact that the required functionality is not provided by your
+webhosting.
 
 == Screenshots ==
 
@@ -61,6 +83,15 @@ Nobody asked any yet.
 3. Detailed statistics for a file
 
 == Changelog ==
+
+= 0.07
+* Simple Download Monitor now allows inline content, e.g. images and
+  videos that display within pages rather than download as a file.
+  By default, all files are set to download, but you can override this
+  behavior for specific regular expressions in the configuration.
+
+  Note: Do not forget to add image extensions to Allowed Extensions -
+  a file must be allowed to download before it can be "inlined".
 
 = 0.06 =
 * Fixed a bug on download display if no downloads were recorded.

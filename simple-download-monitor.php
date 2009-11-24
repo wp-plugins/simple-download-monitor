@@ -4,7 +4,7 @@
 Plugin Name: Simple Download Monitor
 Plugin URI: http://www.pepak.net/wordpress/simple-download-monitor-plugin
 Description: Count the number of downloads without having to maintain a comprehensive download page.
-Version: 0.06
+Version: 0.07
 Author: Pepak
 Author URI: http://www.pepak.net
 */
@@ -31,7 +31,7 @@ if (!class_exists('SimpleDownloadMonitor'))
 	class SimpleDownloadMonitor
 	{
 
-		const VERSION = '0.06';
+		const VERSION = '0.07';
 		const PREFIX = 'sdmon_';
 		const PREG_DELIMITER = '`';
 		const GET_PARAM = 'sdmon';
@@ -90,6 +90,7 @@ if (!class_exists('SimpleDownloadMonitor'))
 			add_option(self::PREFIX . 'directories', 'files/');
 			add_option(self::PREFIX . 'extensions', 'zip|rar|7z');
 			add_option(self::PREFIX . 'detailed', '0');
+			add_option(self::PREFIX . 'inline', '');
 		}
 
 		protected function table_downloads()
@@ -153,17 +154,22 @@ if (!class_exists('SimpleDownloadMonitor'))
 			if (!preg_match($extregexp, $relfilename))
 				return FALSE;
 			// Generate proper headers
+			$mimetype = '';
 			if (function_exists('finfo_open'))
 			{
 				$finfo = finfo_open(FILEINFO_MIME_TYPE);
 				$mimetype = finfo_file($finfo, $fullfilename);
 			}
-			elseif (function_exists('mime_content_type'))
+			if (!$mimetype && function_exists('mime_content_type'))
 				$mimetype = mime_content_type($fullfilename);
-			else
+			if (!$mimetype || ((strpos($mimetype, '/')) === FALSE))
 				$mimetype = 'application/octet-stream';
+			$disposition = 'attachment';
+			$inlineregexp = self::PREG_DELIMITER . get_option(self::PREFIX . 'inline') . self::PREG_DELIMITER;
+			if ($inlineregexp && preg_match($inlineregexp, $relfilename))
+				$disposition = 'inline';
 			header('Content-type: ' . $mimetype);
-			header('Content-disposition: attachment; filename=' . basename($fullfilename));
+			header('Content-disposition: '.$disposition.'; filename=' . basename($fullfilename));
 			header('Content-size: ' . filesize($fullfilename));
 			// Send the file to user.
 			$fp = fopen($fullfilename, 'rb');
@@ -202,11 +208,13 @@ if (!class_exists('SimpleDownloadMonitor'))
 				$directories = strval($_POST[self::PREFIX . 'directories']);
 				$extensions = strval($_POST[self::PREFIX . 'extensions']);
 				$detailed = intval($_POST[self::PREFIX . 'detailed']);
+				$inline = strval($_POST[self::PREFIX . 'inline']);
 				// Remove slashes if necessary
 				if (get_magic_quotes_gpc())
 				{
 					$directories = stripslashes($directories);
 					$extensions = stripslashes($extensions);
+					$inline = stripslashes($inline);
 				}
 				// Escape the delimiter
 				list($directories, $extensions) = str_replace(self::PREG_DELIMITER, '\\'.self::PREG_DELIMITER, array($directories, $extensions));
@@ -214,11 +222,13 @@ if (!class_exists('SimpleDownloadMonitor'))
 				update_option(self::PREFIX . 'directories', $directories);
 				update_option(self::PREFIX . 'extensions', $extensions);
 				update_option(self::PREFIX . 'detailed', $detailed);
+				update_option(self::PREFIX . 'inline', $inline);
 			}
 			// Load options from the database
 			$directories = get_option(self::PREFIX . 'directories');
 			$extensions = get_option(self::PREFIX . 'extensions');
 			$detailed = get_option(self::PREFIX . 'detailed');
+			$inline = get_option(self::PREFIX . 'inline');
 			// Build the form
 			?>
 <div class="wrap">
@@ -232,6 +242,11 @@ if (!class_exists('SimpleDownloadMonitor'))
 	<p><?php echo __('Only files with extensions matching this regular expressions will be processed. This is another important security value. Make sure you only add extensions which are safe for malicious users to have, e.g. archives and possibly images. Do NOT use any expression that could allow a user to download PHP files, even if you think it safe given the Allowed Directories option above.', 'simple-download-monitor'); ?></p>
 	<p><?php echo __("Default value is <code>zip|rar|7z</code> which only allows download of files ending with <code>.zip</code>, <code>.rar</code> and <code>.7z</code> (the leading <code>.</code> is implicit).", 'simple-download-monitor'); ?></p>
 	<p><input type="text" name="<?php echo self::PREFIX; ?>extensions" value="<?php echo attribute_escape($extensions); ?>" /></p>
+	<h3><?php echo __('Inline files', 'simple-download-monitor'); ?></h3>
+	<p><?php echo __('Files whose names match this regular expression will be displayed inline (within a HTML page) rather than downloaded.', 'simple-download-monitor'); ?></p>
+	<p><?php echo __("By default, this value is empty - no files will appear inline, all will be downloaded. You may want to place something like <code>\.(jpe?g|gif|png|swf)$</code> here to make images and Flash videos appear inline.", 'simple-download-monitor'); ?></p>
+	<p><?php echo __('Note: Unlike the options above, nothing is implied in this regular expression. You <em>must</em> use an explicit <code>\.</code> to denote "start of extension", you <em>must</em> use an explicit <code>$</code> to mark "end of filename", etc.', 'simple-download-monitor'); ?></p>
+	<p><input type="text" name="<?php echo self::PREFIX; ?>inline" value="<?php echo attribute_escape($inline); ?>" /></p>
 	<h3><?php echo __("Store detailed logs?", 'simple-download-monitor'); ?></h3>
 	<p><?php echo __("If detailed logs are allowed, various information (including exact time of download, user's IP address, referrer etc.) is stored. This can fill your database quickly if you have only a little space or a lot of popular downloads. Otherwise just the total numbers of downloads are stored, consuming significantly less space.", 'simple-download-monitor'); ?></p>
 	<p><label for="<?php echo self::PREFIX; ?>detailed"><input type="checkbox" name="<?php echo self::PREFIX; ?>detailed" value="1" <?php if ($detailed) echo 'checked="checked" '; ?>/> <?php echo __('Use detailed statistics.', 'simple-download-monitor'); ?></label></p>
