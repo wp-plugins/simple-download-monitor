@@ -4,7 +4,7 @@ Donate link:
 Tags: files, counter, count, tracking, download monitor, monitor, downloads, download
 Requires at least: 2.8.0
 Tested up to: 2.8.4
-Stable tag: 0.07
+Stable tag: 0.08
 
 Count the number of downloads without having to maintain a comprehensive download page.
 
@@ -50,14 +50,14 @@ username of people who download my files.
 
 == Frequently Asked Questions ==
 
-= Why don't I see any files in the download statistics?
+= Why don't I see any files in the download statistics? =
 
 Because nobody downloaded any file yet. Simple Download Monitor does not
 scan all available files and assign "zero" downloads to them; instead, it
 starts with an empty list and populates it with attempted downloads. If
 you want to see something, just try to download one of the monitored files.
 
-= Simple Download Monitor doesn't monitor my downloads. Why?
+= Simple Download Monitor doesn't monitor my downloads. Why? =
 
 The most common cause is that your webhoster doesn't support user-definable
 .htaccess and/or mod_rewrite, both of which are required for the expected
@@ -84,7 +84,17 @@ webhosting.
 
 == Changelog ==
 
-= 0.07
+= 0.08 =
+* Administrators can now delete download statistics from the Tools panel:
+  A checkbox is shown next to each record, and a button for deleting checked
+  records is provided at the bottom of the list. A button for deleting all
+  records is also provided. This is true for both the global list and
+  details list.
+
+  Note: This function is only allowed for users with a "delete_user" 
+  capability (by default, that means only Administrators).
+
+= 0.07 =
 * Simple Download Monitor now allows inline content, e.g. images and
   videos that display within pages rather than download as a file.
   By default, all files are set to download, but you can override this

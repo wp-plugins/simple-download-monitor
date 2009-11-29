@@ -4,7 +4,7 @@
 Plugin Name: Simple Download Monitor
 Plugin URI: http://www.pepak.net/wordpress/simple-download-monitor-plugin
 Description: Count the number of downloads without having to maintain a comprehensive download page.
-Version: 0.07
+Version: 0.08
 Author: Pepak
 Author URI: http://www.pepak.net
 */
@@ -31,11 +31,12 @@ if (!class_exists('SimpleDownloadMonitor'))
 	class SimpleDownloadMonitor
 	{
 
-		const VERSION = '0.07';
+		const VERSION = '0.08';
 		const PREFIX = 'sdmon_';
 		const PREG_DELIMITER = '`';
 		const GET_PARAM = 'sdmon';
 		const RECORDS_PER_PAGE = 20;
+		const GETTEXT_REALM = 'simple-download-monitor';
 
 		protected $plugin_url = '';
 		protected $plugin_dir = '';
@@ -186,9 +187,9 @@ if (!class_exists('SimpleDownloadMonitor'))
 			{
 				$moFile = $this->plugin_dir . "/lang/" . $currentLocale . ".mo";
 				if(@file_exists($moFile) && is_readable($moFile))
-					load_textdomain('simple-download-monitor', $moFile);
+					load_textdomain(self::GETTEXT_REALM, $moFile);
 			}
-			//load_plugin_textdomain('simple-download-monitor', $this->plugin_dir . '/lang');
+			//load_plugin_textdomain(self::GETTEXT_REALM, $this->plugin_dir . '/lang');
 			if (isset($_GET[self::GET_PARAM]) && ($filename = $_GET[self::GET_PARAM]))
 			{
 				if ($this->Download($filename))
@@ -233,24 +234,24 @@ if (!class_exists('SimpleDownloadMonitor'))
 			?>
 <div class="wrap">
 <form method="post" action="<?php echo $_SERVER['REQUEST_URI']; ?>">
-	<h2><?php echo __('Simple Download Monitor options', 'simple-download-monitor'); ?></h2>
-	<h3><?php echo __('Allowed directories', 'simple-download-monitor'); ?></h3>
-	<p><?php echo __("Only requested files whose full names (relative to document root) start with this regular expression will be processed. It is strongly recommended to place all downloadable files (and ONLY downloadable files) into a designated directory and then placing that directory's name followed by a slash here. It is possible to use the power of PREG to allow multiple directories, but make sure there are ONLY files which you are comfortable with malicious users downloading. Do not EVER allow directories which contain PHP files here! That could lead to disclosure of sensitive data, including username and password used to connect to WordPress database.", 'simple-download-monitor'); ?></p>
-	<p><?php echo __("Default value is <code>files/</code>, which only allows download from /files directory (the leading <code>/</code> is implicit).", 'simple-download-monitor'); ?></p>
+	<h2><?php echo __('Simple Download Monitor options', self::GETTEXT_REALM); ?></h2>
+	<h3><?php echo __('Allowed directories', self::GETTEXT_REALM); ?></h3>
+	<p><?php echo __("Only requested files whose full names (relative to document root) start with this regular expression will be processed. It is strongly recommended to place all downloadable files (and ONLY downloadable files) into a designated directory and then placing that directory's name followed by a slash here. It is possible to use the power of PREG to allow multiple directories, but make sure there are ONLY files which you are comfortable with malicious users downloading. Do not EVER allow directories which contain PHP files here! That could lead to disclosure of sensitive data, including username and password used to connect to WordPress database.", self::GETTEXT_REALM); ?></p>
+	<p><?php echo __("Default value is <code>files/</code>, which only allows download from /files directory (the leading <code>/</code> is implicit).", self::GETTEXT_REALM); ?></p>
 	<p><input type="text" name="<?php echo self::PREFIX; ?>directories" value="<?php echo attribute_escape($directories); ?>" /></p>
-	<h3><?php echo __('Allowed extensions', 'simple-download-monitor'); ?></h3>
-	<p><?php echo __('Only files with extensions matching this regular expressions will be processed. This is another important security value. Make sure you only add extensions which are safe for malicious users to have, e.g. archives and possibly images. Do NOT use any expression that could allow a user to download PHP files, even if you think it safe given the Allowed Directories option above.', 'simple-download-monitor'); ?></p>
-	<p><?php echo __("Default value is <code>zip|rar|7z</code> which only allows download of files ending with <code>.zip</code>, <code>.rar</code> and <code>.7z</code> (the leading <code>.</code> is implicit).", 'simple-download-monitor'); ?></p>
+	<h3><?php echo __('Allowed extensions', self::GETTEXT_REALM); ?></h3>
+	<p><?php echo __('Only files with extensions matching this regular expressions will be processed. This is another important security value. Make sure you only add extensions which are safe for malicious users to have, e.g. archives and possibly images. Do NOT use any expression that could allow a user to download PHP files, even if you think it safe given the Allowed Directories option above.', self::GETTEXT_REALM); ?></p>
+	<p><?php echo __("Default value is <code>zip|rar|7z</code> which only allows download of files ending with <code>.zip</code>, <code>.rar</code> and <code>.7z</code> (the leading <code>.</code> is implicit).", self::GETTEXT_REALM); ?></p>
 	<p><input type="text" name="<?php echo self::PREFIX; ?>extensions" value="<?php echo attribute_escape($extensions); ?>" /></p>
-	<h3><?php echo __('Inline files', 'simple-download-monitor'); ?></h3>
-	<p><?php echo __('Files whose names match this regular expression will be displayed inline (within a HTML page) rather than downloaded.', 'simple-download-monitor'); ?></p>
-	<p><?php echo __("By default, this value is empty - no files will appear inline, all will be downloaded. You may want to place something like <code>\.(jpe?g|gif|png|swf)$</code> here to make images and Flash videos appear inline.", 'simple-download-monitor'); ?></p>
-	<p><?php echo __('Note: Unlike the options above, nothing is implied in this regular expression. You <em>must</em> use an explicit <code>\.</code> to denote "start of extension", you <em>must</em> use an explicit <code>$</code> to mark "end of filename", etc.', 'simple-download-monitor'); ?></p>
+	<h3><?php echo __('Inline files', self::GETTEXT_REALM); ?></h3>
+	<p><?php echo __('Files whose names match this regular expression will be displayed inline (within a HTML page) rather than downloaded.', self::GETTEXT_REALM); ?></p>
+	<p><?php echo __("By default, this value is empty - no files will appear inline, all will be downloaded. You may want to place something like <code>\.(jpe?g|gif|png|swf)$</code> here to make images and Flash videos appear inline.", self::GETTEXT_REALM); ?></p>
+	<p><?php echo __('Note: Unlike the options above, nothing is implied in this regular expression. You <em>must</em> use an explicit <code>\.</code> to denote "start of extension", you <em>must</em> use an explicit <code>$</code> to mark "end of filename", etc.', self::GETTEXT_REALM); ?></p>
 	<p><input type="text" name="<?php echo self::PREFIX; ?>inline" value="<?php echo attribute_escape($inline); ?>" /></p>
-	<h3><?php echo __("Store detailed logs?", 'simple-download-monitor'); ?></h3>
-	<p><?php echo __("If detailed logs are allowed, various information (including exact time of download, user's IP address, referrer etc.) is stored. This can fill your database quickly if you have only a little space or a lot of popular downloads. Otherwise just the total numbers of downloads are stored, consuming significantly less space.", 'simple-download-monitor'); ?></p>
-	<p><label for="<?php echo self::PREFIX; ?>detailed"><input type="checkbox" name="<?php echo self::PREFIX; ?>detailed" value="1" <?php if ($detailed) echo 'checked="checked" '; ?>/> <?php echo __('Use detailed statistics.', 'simple-download-monitor'); ?></label></p>
-	<div class="submit"><input type="submit" name="SimpleDownloadMonitor_Submit" value="<?php echo __("Update settings", 'simple-download-monitor') ?>" /></div>
+	<h3><?php echo __("Store detailed logs?", self::GETTEXT_REALM); ?></h3>
+	<p><?php echo __("If detailed logs are allowed, various information (including exact time of download, user's IP address, referrer etc.) is stored. This can fill your database quickly if you have only a little space or a lot of popular downloads. Otherwise just the total numbers of downloads are stored, consuming significantly less space.", self::GETTEXT_REALM); ?></p>
+	<p><label for="<?php echo self::PREFIX; ?>detailed"><input type="checkbox" name="<?php echo self::PREFIX; ?>detailed" value="1" <?php if ($detailed) echo 'checked="checked" '; ?>/> <?php echo __('Use detailed statistics.', self::GETTEXT_REALM); ?></label></p>
+	<div class="submit"><input type="submit" name="SimpleDownloadMonitor_Submit" value="<?php echo __("Update settings", self::GETTEXT_REALM) ?>" /></div>
 </form>
 </div><?php
 		}
@@ -263,6 +264,21 @@ if (!class_exists('SimpleDownloadMonitor'))
 			$flags = isset($_GET['flags']) ? intval($_GET['flags']) : 0;
 			$detailed = get_option(self::PREFIX . 'detailed');
 			$options = array('download' => $download, 'from' => $from, 'order' => $order, 'flags' => $flags);
+			if ($this->IsAdmin())
+			{
+				if (isset($_POST['SimpleDownloadMonitor_Delete']) && isset($_POST['SimpleDownloadMonitor_DeleteIds']) && is_array($_POST['SimpleDownloadMonitor_DeleteIds'])) 
+				{
+					$this->DeleteDownloads($_POST['SimpleDownloadMonitor_DeleteIds']);
+				} 
+				elseif (isset($_POST['SimpleDownloadMonitor_DeleteAll']) && ($_POST['SimpleDownloadMonitor_DeleteAllReally'] == 'yes')) 
+				{
+					$this->DeleteAllDownloads();
+				}
+				if (isset($_POST['SimpleDownloadMonitor_DeleteDetail']) && isset($_POST['SimpleDownloadMonitor_DeleteIds']) && is_array($_POST['SimpleDownloadMonitor_DeleteIds'])) 
+				{
+					$this->DeleteDownloadDetails($_POST['SimpleDownloadMonitor_DeleteIds']);
+				} 
+			}
 			if ($detailed && $download)
 				$this->DetailedDownloadList($options);
 			else
@@ -355,17 +371,99 @@ if (!class_exists('SimpleDownloadMonitor'))
 			$pages = array();
 			if ($from > 0)
 			{
-				$pages[] = '<a href="' . $this->GetUrlForList(array_merge($options, array('from'=>0))) . '">' . __("First", 'simple-download-monitor') . '</a>';
-				$pages[] = '<a href="' . $this->GetUrlForList(array_merge($options, array('from'=>($from>self::RECORDS_PER_PAGE ? $from-self::RECORDS_PER_PAGE : 0)))) . '">' . __("Previous", 'simple-download-monitor') . '</a>';
+				$pages[] = '<a href="' . $this->GetUrlForList(array_merge($options, array('from'=>0))) . '">' . __("First", self::GETTEXT_REALM) . '</a>';
+				$pages[] = '<a href="' . $this->GetUrlForList(array_merge($options, array('from'=>($from>self::RECORDS_PER_PAGE ? $from-self::RECORDS_PER_PAGE : 0)))) . '">' . __("Previous", self::GETTEXT_REALM) . '</a>';
 			}
 
 			if (($from + self::RECORDS_PER_PAGE) < $count)
 			{
-				$pages[] = '<a href="' . $this->GetUrlForList(array_merge($options, array('from'=>$from+self::RECORDS_PER_PAGE))) . '">' . __("Next", 'simple-download-monitor') . '</a>';
-				$pages[] = '<a href="' . $this->GetUrlForList(array_merge($options, array('from'=>$count-self::RECORDS_PER_PAGE))) . '">' . __("Last", 'simple-download-monitor') . '</a>';
+				$pages[] = '<a href="' . $this->GetUrlForList(array_merge($options, array('from'=>$from+self::RECORDS_PER_PAGE))) . '">' . __("Next", self::GETTEXT_REALM) . '</a>';
+				$pages[] = '<a href="' . $this->GetUrlForList(array_merge($options, array('from'=>$count-self::RECORDS_PER_PAGE))) . '">' . __("Last", self::GETTEXT_REALM) . '</a>';
 			}
 			$result = $pages ? '<div class="pages-list">' . implode(' ', $pages) . '</div>' : '';
 			return $result;
+		}
+
+		protected function IsAdmin()
+		{
+			if (current_user_can('delete_users'))
+			/*
+			global $user_level;
+			get_currentuserinfo();
+			if ($user_level >= 10)
+			*/
+				return TRUE;
+			else
+				return FALSE;
+		}
+
+		protected function DeleteDownloadDetails($ids = array())
+		{
+			global $wpdb;
+			$ids = array_map('intval', $ids);
+			if ($ids)
+			{
+				$ids = implode(',', $ids);
+				$downloads = $this->table_downloads();
+				$details = $this->table_details();
+				$downloadids = array();
+				$sql = "SELECT DISTINCT download FROM ${details} WHERE id IN (${ids})";
+				$results = $wpdb->get_results($sql, ARRAY_N);
+				if (is_array($results))
+					foreach ($results as $row)
+					{
+						list($downloadid) = $row;
+						$downloadids[] = $downloadid;
+					}
+				if ($downloadids) {
+					$sql = "DELETE FROM ${details} WHERE id IN (${ids})";
+					$wpdb->query($sql);
+					foreach ($downloadids as $downloadid)
+					{
+						$sql = "SELECT COUNT(*), MAX(download_date) FROM ${details} WHERE download=%d";
+						$result = $wpdb->get_row($wpdb->prepare($sql, $downloadid), ARRAY_N);
+						if (is_array($result))
+						{
+							list($count, $date) = $result;
+							$sql = "UPDATE ${downloads} SET download_count=%d, last_date=%s WHERE id=%d";
+							$wpdb->query($wpdb->prepare($sql, $count, $date, $downloadid));
+						}
+					}
+				}
+			}
+			//wp_redirect($_SERVER['REQUEST_URI']);
+			//die();
+		}
+
+		protected function DeleteDownloads($ids = array())
+		{
+			global $wpdb;
+			$ids = array_map('intval', $ids);
+			if ($ids)
+			{
+				$ids = implode(',', $ids);
+				$downloads = $this->table_downloads();
+				$details = $this->table_details();
+				$sql = "DELETE FROM ${downloads} WHERE id IN (${ids})";
+				$wpdb->query($sql);
+				$sql = "DELETE FROM ${details} WHERE download IN (${ids})";
+				$wpdb->query($sql);
+			}
+			//wp_redirect($_SERVER['REQUEST_URI']);
+			//die();
+		}
+
+		protected function DeleteAllDownloads()
+		{
+			global $wpdb;
+			$downloads = $this->table_downloads();
+			$details = $this->table_details();
+			$sql = "DELETE FROM ${downloads}";
+			$wpdb->query($sql);
+			$sql = "DELETE FROM ${details}";
+			$wpdb->query($sql);
+			//wp_redirect($_SERVER['REQUEST_URI']);
+			//die();
 		}
 
 		protected function DownloadList($options)
@@ -377,22 +475,27 @@ if (!class_exists('SimpleDownloadMonitor'))
 			$detailed = get_option(self::PREFIX . 'detailed');
 			?>
 <div class="wrap">
-<h2><?php echo __('Simple Download Monitor', 'simple-download-monitor'); ?></h2>
-<h3><?php echo ($options['flags'] & self::FLAGS_NOTEXISTING) ? __('Nonexistent downloads', 'simple-download-monitor') : __('All downloads', 'simple-download-monitor'); ?></h3>
-<p><a href="<?php echo $this->GetUrlForList(array_merge($options, array('from' => 0, 'flags' => $options['flags']^self::FLAGS_NOTEXISTING))); ?>"><?php echo ($options['flags'] & self::FLAGS_NOTEXISTING) ? __('Show all downloads', 'simple-download-monitor') : __('Show nonexistent downloads', 'simple-download-monitor'); ?></a></p>
+<h2><?php echo __('Simple Download Monitor', self::GETTEXT_REALM); ?></h2>
+<h3><?php echo ($options['flags'] & self::FLAGS_NOTEXISTING) ? __('Nonexistent downloads', self::GETTEXT_REALM) : __('All downloads', self::GETTEXT_REALM); ?></h3>
+<p><a href="<?php echo $this->GetUrlForList(array_merge($options, array('from' => 0, 'flags' => $options['flags']^self::FLAGS_NOTEXISTING))); ?>"><?php echo ($options['flags'] & self::FLAGS_NOTEXISTING) ? __('Show all downloads', self::GETTEXT_REALM) : __('Show nonexistent downloads', self::GETTEXT_REALM); ?></a></p>
+<?php if ($this->isAdmin()): ?>
+<form method="post" action="<?php echo $_SERVER['REQUEST_URI']; ?>">
+<?php endif; ?>
 <table id="sdmon">
 	<colgroup>
 		<col class="sdmon-rownum" align="right" width="32" />
 		<col class="sdmon-filename" />
 		<col class="sdmon-count" align="right" width="64" />
 		<col class="sdmon-date" align="center" />
+		<col class="sdmon-tools" />
 	</colgroup>
 	<thead>
 	<tr>
 		<th>&nbsp;</th>
-		<th><a href="<?php echo $this->GetUrlForList(array_merge($options, array('order' => self::ORDER_NAME ))); ?>"><?php echo __("Filename", 'simple-download-monitor'); ?></a></th>
-		<th><a href="<?php echo $this->GetUrlForList(array_merge($options, array('order' => self::ORDER_COUNT))); ?>"><?php echo __("Download count", 'simple-download-monitor'); ?></a></th>
-		<th><a href="<?php echo $this->GetUrlForList(array_merge($options, array('order' => self::ORDER_DATE ))); ?>"><?php echo __("Last date", 'simple-download-monitor'); ?></a></th>
+		<th><a href="<?php echo $this->GetUrlForList(array_merge($options, array('order' => self::ORDER_NAME ))); ?>"><?php echo __("Filename", self::GETTEXT_REALM); ?></a></th>
+		<th><a href="<?php echo $this->GetUrlForList(array_merge($options, array('order' => self::ORDER_COUNT))); ?>"><?php echo __("Download count", self::GETTEXT_REALM); ?></a></th>
+		<th><a href="<?php echo $this->GetUrlForList(array_merge($options, array('order' => self::ORDER_DATE ))); ?>"><?php echo __("Last date", self::GETTEXT_REALM); ?></a></th>
+		<th>&nbsp;</th>
 	</tr>
 	</thead>
 	<tbody><?php
@@ -414,12 +517,18 @@ if (!class_exists('SimpleDownloadMonitor'))
 		<td><?php if ($detailed): ?><a href="<?php echo $this->GetUrlForList(array('download' => $download)); ?>"><?php endif; echo htmlspecialchars($filename); if ($detailed): ?></a><?php endif; ?></td>
 		<td><?php echo $count; ?></td>
 		<td><?php echo mysql2date('Y-m-d h:i:s', $date, TRUE); ?></td>
+		<td><?php if ($this->IsAdmin()): ?><input type="checkbox" name="SimpleDownloadMonitor_DeleteIds[]" value="<?php echo $download; ?>" /><label for="SimpleDownloadMonitor_DeleteIds[]"> <?php echo __('Delete', self::GETTEXT_REALM); ?></label><?php else: ?>&nbsp;<?php endif; ?></td>
 	</tr>
 	</tbody><?php
 				}
 			}
 		?>
 </table>
+<?php if ($this->isAdmin()): ?>
+<div><input type="submit" name="SimpleDownloadMonitor_Delete" value="<?php echo __('Delete Checked', self::GETTEXT_REALM); ?>" /></div>
+<div><input type="submit" name="SimpleDownloadMonitor_DeleteAll" value="<?php echo __('Delete All', self::GETTEXT_REALM); ?>" /> - <input type="checkbox" name="SimpleDownloadMonitor_DeleteAllReally" value="yes" /><label for="SimpleDownloadMonitor_DeleteAllReally"> <?php echo __('Yes, I am sure', self::GETTEXT_REALM); ?></label></div>
+</form>
+<?php endif; ?>
 <?php echo $this->Paginator($options, $totalcount); ?>
 </div><?php
 		}
@@ -436,15 +545,19 @@ if (!class_exists('SimpleDownloadMonitor'))
 			list($id, $filename, $count) = $wpdb->get_row($wpdb->prepare("SELECT id, filename, download_count FROM ${table_downloads} WHERE id=%d", $download), ARRAY_N);
 			if (!$id)
 			{
-				DownloadList($options);
+				$this->DownloadList($options);
+				return;
 			}
 			else
 			{
 				?>
 <div class="wrap">
-<h2><?php echo __('Simple Download Monitor', 'simple-download-monitor'); ?></h2>
-<h3><?php printf(__('Detailed data for <strong>%s</strong>:', 'simple-download-monitor'), $filename); ?></h3>
-<p><?php printf(__('Total number of downloads: <strong>%d</strong>.', 'simple-download-monitor'), $count); ?></p>
+<h2><?php echo __('Simple Download Monitor', self::GETTEXT_REALM); ?></h2>
+<h3><?php printf(__('Detailed data for <strong>%s</strong>:', self::GETTEXT_REALM), $filename); ?></h3>
+<p><?php printf(__('Total number of downloads: <strong>%d</strong>.', self::GETTEXT_REALM), $count); ?></p>
+<?php if ($this->isAdmin()): ?>
+<form method="post" action="<?php echo $_SERVER['REQUEST_URI']; ?>">
+<?php endif; ?>
 <table id="sdmon">
 	<colgroup>
 		<col class="sdmon-rownum" align="right" width="32" />
@@ -452,14 +565,16 @@ if (!class_exists('SimpleDownloadMonitor'))
 		<col class="sdmon-ipaddr" />
 		<col class="sdmon-referer" />
 		<col class="sdmon-username" />
+		<col class="sdmon-tools" />
 	</colgroup>
 	<thead>
 	<tr>
 		<th>&nbsp;</th>
-		<th><a href="<?php echo $this->GetUrlForList(array_merge($options, array('order' => self::ORDER_DATE   ))); ?>"><?php echo __("Date", 'simple-download-monitor'); ?></a></th>
-		<th><a href="<?php echo $this->GetUrlForList(array_merge($options, array('order' => self::ORDER_IP     ))); ?>"><?php echo __("IP address", 'simple-download-monitor'); ?></a></th>
-		<th><a href="<?php echo $this->GetUrlForList(array_merge($options, array('order' => self::ORDER_REFERER))); ?>"><?php echo __("Referer", 'simple-download-monitor'); ?></a></th>
-		<th><a href="<?php echo $this->GetUrlForList(array_merge($options, array('order' => self::ORDER_USER   ))); ?>"><?php echo __("Username", 'simple-download-monitor'); ?></a></th>
+		<th><a href="<?php echo $this->GetUrlForList(array_merge($options, array('order' => self::ORDER_DATE   ))); ?>"><?php echo __("Date", self::GETTEXT_REALM); ?></a></th>
+		<th><a href="<?php echo $this->GetUrlForList(array_merge($options, array('order' => self::ORDER_IP     ))); ?>"><?php echo __("IP address", self::GETTEXT_REALM); ?></a></th>
+		<th><a href="<?php echo $this->GetUrlForList(array_merge($options, array('order' => self::ORDER_REFERER))); ?>"><?php echo __("Referer", self::GETTEXT_REALM); ?></a></th>
+		<th><a href="<?php echo $this->GetUrlForList(array_merge($options, array('order' => self::ORDER_USER   ))); ?>"><?php echo __("Username", self::GETTEXT_REALM); ?></a></th>
+		<th>&nbsp;</th>
 	</tr>
 	</thead>
 	<tbody><?php
@@ -467,13 +582,13 @@ if (!class_exists('SimpleDownloadMonitor'))
 				$where = $this->GetDetailWhere($flags);
 				$orderby = $this->GetDetailOrderBy($order);
 				$limit = $this->GetLimit($from);
-				$sql = "SELECT download_date, ip, referer, userid, username FROM ${table_details} WHERE download=%d ${where} ${orderby} ${limit}";
+				$sql = "SELECT id, download_date, ip, referer, userid, username FROM ${table_details} WHERE download=%d ${where} ${orderby} ${limit}";
 				$totalcount = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM ${table_details} WHERE download=%d ${where}", $download));
 				$results = $wpdb->get_results($wpdb->prepare($sql, $download), ARRAY_N);
 				$rownum = intval($options['from']);
 				foreach ($results as $row) {
 					$rownum++;
-					list($date, $ip, $referer, $userid, $username) = $row;
+					list($id, $date, $ip, $referer, $userid, $username) = $row;
 					?>
 	<tr>
 		<td><?php echo $rownum; ?>.</td>
@@ -481,14 +596,22 @@ if (!class_exists('SimpleDownloadMonitor'))
 		<td><?php echo htmlspecialchars($ip); ?></td>
 		<td><?php echo htmlspecialchars($referer); ?></td>
 		<td><?php echo htmlspecialchars($username); ?></td>
+		<td><?php if ($this->IsAdmin()): ?><input type="checkbox" name="SimpleDownloadMonitor_DeleteIds[]" value="<?php echo $id; ?>" /><label for="SimpleDownloadMonitor_DeleteIds[]"> <?php echo __('Delete', self::GETTEXT_REALM); ?></label><?php else: ?>&nbsp;<?php endif; ?></td>
 	</tr>
 	</tbody><?php
 				}
 			}
 		?>
 </table>
+<?php if ($this->isAdmin()): ?>
+<div><input type="submit" name="SimpleDownloadMonitor_DeleteDetail" value="<?php echo __('Delete Checked', self::GETTEXT_REALM); ?>" /></div>
+</form>
+<form method="post" action="<?php echo $_SERVER['REQUEST_URI']; ?>">
+<div><input type="submit" name="SimpleDownloadMonitor_Delete" value="<?php echo __('Delete All', self::GETTEXT_REALM); ?>" /> - <input type="checkbox" name="SimpleDownloadMonitor_DeleteIds[]" value="<?php echo $download; ?>" /> <?php echo __('Yes, I am sure', self::GETTEXT_REALM); ?></label></div>
+</form>
+<?php endif; ?>
 <?php echo $this->Paginator($options, $totalcount); ?>
-<p><a href="<?php echo $this->GetUrlForList(); ?>"><?php echo __('Return to full list.', 'simple-download-monitor'); ?></a></p>
+<p><a href="<?php echo $this->GetUrlForList(); ?>"><?php echo __('Return to full list.', self::GETTEXT_REALM); ?></a></p>
 </div><?php
 		}
 
@@ -510,8 +633,8 @@ if (!function_exists('SimpleDownloadMonitor_BuildAdminMenu'))
 		global $sdmon;
 		if (isset($sdmon))
 		{
-			$options_page = add_options_page(__('Simple Download Monitor options', 'simple-download-monitor'), __('Simple Download Monitor', 'simple-download-monitor'), 'manage_options', basename(__FILE__), array(&$sdmon, 'AdminPanel'));
-			$tool_page = add_submenu_page('tools.php', __('Simple Download Monitor', 'simple-download-monitor'), __('Simple Download Monitor', 'simple-download-monitor'), 'read', basename(__FILE__), array(&$sdmon, 'ToolsPanel'));
+			$options_page = add_options_page(__('Simple Download Monitor options', SimpleDownloadMonitor::GETTEXT_REALM), __('Simple Download Monitor', SimpleDownloadMonitor::GETTEXT_REALM), 'manage_options', basename(__FILE__), array(&$sdmon, 'AdminPanel'));
+			$tool_page = add_submenu_page('tools.php', __('Simple Download Monitor', SimpleDownloadMonitor::GETTEXT_REALM), __('Simple Download Monitor', SimpleDownloadMonitor::GETTEXT_REALM), 'read', basename(__FILE__), array(&$sdmon, 'ToolsPanel'));
 			add_action('admin_head-'.$tool_page, array(&$sdmon, 'ActionHead'));
 		}
 	}
