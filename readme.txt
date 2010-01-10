@@ -3,8 +3,8 @@ Contributors: Pepak
 Donate link:
 Tags: files, counter, count, tracking, download monitor, monitor, downloads, download
 Requires at least: 2.8.0
-Tested up to: 2.8.4
-Stable tag: 0.08
+Tested up to: 2.9.1
+Stable tag: 0.09
 
 Count the number of downloads without having to maintain a comprehensive download page.
 
@@ -83,6 +83,13 @@ webhosting.
 3. Detailed statistics for a file
 
 == Changelog ==
+
+= 0.09 =
+
+* Fixed incorrect header for file size. That should fix incompatibility
+  with some plugins and downloaders.
+
+* Support for resumed transfers.
 
 = 0.08 =
 * Administrators can now delete download statistics from the Tools panel:
