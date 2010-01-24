@@ -4,7 +4,7 @@ Donate link:
 Tags: files, counter, count, tracking, download monitor, monitor, downloads, download
 Requires at least: 2.8.0
 Tested up to: 2.9.1
-Stable tag: 0.09
+Stable tag: 0.10
 
 Count the number of downloads without having to maintain a comprehensive download page.
 
@@ -76,6 +76,23 @@ it succeeds, you know the problem lies either in your .htaccess file or
 in the fact that the required functionality is not provided by your
 webhosting.
 
+= I am getting a Parse error (unexpected T_CONST). What is it? =
+
+Your webhosting still uses PHP version 4. While there is nothing
+that Simple Download Monitor actually NEEDS from PHP 5, the use of
+newer PHP allows for a (slightly) cleaner code and better future
+maintenance. Unfortunately, it is not possible to contain both PHP 4
+and 5 code in a single file without sacrificing readability.
+
+In the distribution archive you will find a ZIP archive containing
+a PHP 4 version of the plugin. Just extract it over your existing
+Simple Download Monitor installation to get PHP 4 compatibility.
+
+Please note that this rewrite was only tested on PHP 5, where it
+does work (PHHP 5 is backwards compatible with PHP 4), but it may
+not work on a real PHP 4 as I have no test machine for it. But I
+will fix any errors that are reported to me.
+
 == Screenshots ==
 
 1. Administrative options
@@ -83,6 +100,12 @@ webhosting.
 3. Detailed statistics for a file
 
 == Changelog ==
+
+= 0.10 =
+
+* Belorussian translation by FatCow ( http://www.fatcow.com )
+
+* PHP 4 version is also available (see the FAQ).
 
 = 0.09 =
 
