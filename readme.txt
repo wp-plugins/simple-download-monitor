@@ -4,7 +4,7 @@ Donate link:
 Tags: files, counter, count, tracking, download monitor, monitor, downloads, download
 Requires at least: 2.8.0
 Tested up to: 2.9.1
-Stable tag: 0.10
+Stable tag: 0.11
 
 Count the number of downloads without having to maintain a comprehensive download page.
 
@@ -84,12 +84,13 @@ newer PHP allows for a (slightly) cleaner code and better future
 maintenance. Unfortunately, it is not possible to contain both PHP 4
 and 5 code in a single file without sacrificing readability.
 
-In the distribution archive you will find a ZIP archive containing
+In the distribution archive you will find a 7Z archive containing
 a PHP 4 version of the plugin. Just extract it over your existing
 Simple Download Monitor installation to get PHP 4 compatibility.
+(You can extract the archive using 7-Zip, http://www.7-zip.org )
 
 Please note that this rewrite was only tested on PHP 5, where it
-does work (PHHP 5 is backwards compatible with PHP 4), but it may
+does work (PHP 5 is backwards compatible with PHP 4), but it may
 not work on a real PHP 4 as I have no test machine for it. But I
 will fix any errors that are reported to me.
 
@@ -100,6 +101,12 @@ will fix any errors that are reported to me.
 3. Detailed statistics for a file
 
 == Changelog ==
+
+= 0.11 =
+
+* Automatic upgrade of the plugin fails because of the nested ZIP
+  archives. As a result, PHP 4 version of the plugin was recompressed
+  to 7Z ( http://www.7-zip.org ).
 
 = 0.10 =
 
