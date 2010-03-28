@@ -4,7 +4,7 @@
 Plugin Name: Simple Download Monitor
 Plugin URI: http://www.pepak.net/wordpress/simple-download-monitor-plugin
 Description: Count the number of downloads without having to maintain a comprehensive download page.
-Version: 0.11
+Version: 0.12
 Author: Pepak
 Author URI: http://www.pepak.net
 */
@@ -31,7 +31,7 @@ if (!class_exists('SimpleDownloadMonitor'))
 	class SimpleDownloadMonitor
 	{
 
-		const VERSION = '0.11';
+		const VERSION = '0.12';
 		const PREFIX = 'sdmon_';
 		const PREG_DELIMITER = '`';
 		const GET_PARAM = 'sdmon';
@@ -92,6 +92,8 @@ if (!class_exists('SimpleDownloadMonitor'))
 			add_option(self::PREFIX . 'extensions', 'zip|rar|7z');
 			add_option(self::PREFIX . 'detailed', '0');
 			add_option(self::PREFIX . 'inline', '');
+			add_option(self::PREFIX . 'ignored_users', '');
+			add_option(self::PREFIX . 'group_within', '0');
 		}
 
 		protected function table_downloads()
@@ -259,37 +261,55 @@ if (!class_exists('SimpleDownloadMonitor'))
 		public function Download($filename)
 		{
 			global $wpdb, $user_login, $user_ID;
+			$store_details = intval(get_option(self::PREFIX . 'detailed'));
+			$details = $this->table_details();
+			$downloads = $this->table_downloads();
+			$ip_addr = $_SERVER['REMOTE_ADDR'];
 			// Normalize the filename
 			$fullfilename = realpath(ABSPATH . '/' . $filename);
 			$relfilename = substr($fullfilename, strlen(ABSPATH));
 			$relfilename = strtr($relfilename, '\\', '/');
 			$exists = (file_exists($fullfilename) AND !is_dir($fullfilename)) ? 1 : 0;
-			// Store uncorrected request name to database for security/mistake review
-			$downloads = $this->table_downloads();
-			$id = $wpdb->get_var($wpdb->prepare("SELECT id FROM ${downloads} WHERE filename=%s", $filename));
-			if ($id)
+			// Get user information and decide if this user should be ignored
+			get_currentuserinfo();
+			$userid = $user_ID ? $user_ID : null;
+			$username = $user_login ? $user_login : null;
+			$ignored_users = get_option(self::PREFIX . 'ignored_users');
+			$monitor = empty($username) || empty($ignored_users) || (!in_array($username, explode('|', $ignored_users)));
+			if ($monitor)
 			{
-				$sql = "UPDATE ${downloads} SET download_count=download_count+1, last_date=NOW(), file_exists=%d WHERE id=%d";
-				$wpdb->query($wpdb->prepare($sql, $exists, $id));
-			}
-			else
-			{
-				$sql = "INSERT INTO ${downloads} (filename, download_count, last_date, file_exists) VALUES (%s, 1, NOW(), %d)";
-				$wpdb->query($wpdb->prepare($sql, $filename, $exists));
-				$id = $wpdb->insert_id;
-			}
-			// If details are requested, store them as well
-			if (intval(get_option(self::PREFIX . 'detailed')))
-			{
-				$details = $this->table_details();
-				$sql = "INSERT INTO ${details} (download, download_date, ip, referer, username, userid) VALUES (%d, NOW(), %s, %s, %s, %d)";
-				get_currentuserinfo();
-				$userid = $user_ID ? $user_ID : null;
-				$username = $user_login ? $user_login : null;
-				$referer = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : null;
-				if (!$username AND isset($_COOKIE['comment_author_'.COOKIEHASH]))
-					$username = utf8_encode($_COOKIE['comment_author_'.COOKIEHASH]);
-				$wpdb->query($wpdb->prepare($sql, $id, $_SERVER['REMOTE_ADDR'], $referer, $username, $userid));
+				// Store uncorrected request name to database for security/mistake review
+				$id = $wpdb->get_var($wpdb->prepare("SELECT id FROM ${downloads} WHERE filename=%s", $filename));
+				if ($id)
+				{
+					// Ignore quick downloads by the same user
+					if ($store_details && (($group_within = intval(get_option(self::PREFIX . 'group_within'))) > 0))
+					{
+						$grouped_id = $wpdb->get_var($wpdb->prepare("SELECT MIN(id) FROM ${details} WHERE download=%d AND (download_date > DATE_ADD(NOW(), INTERVAL -%d SECOND)) AND ip=%s", $id, $group_within, $ip_addr));
+						if (intval($grouped_id) > 0)
+							$monitor = FALSE;
+					}
+					if ($monitor)
+					{
+						$sql = "UPDATE ${downloads} SET download_count=download_count+1, last_date=NOW(), file_exists=%d WHERE id=%d";
+						$wpdb->query($wpdb->prepare($sql, $exists, $id));
+					}
+				}
+				else
+				{
+					$sql = "INSERT INTO ${downloads} (filename, download_count, last_date, file_exists) VALUES (%s, 1, NOW(), %d)";
+					$wpdb->query($wpdb->prepare($sql, $filename, $exists));
+					$id = $wpdb->insert_id;
+				}
+				// If details are requested, store them as well
+				if ($monitor && $store_details)
+				{
+					$sql = "INSERT INTO ${details} (download, download_date, ip, referer, username, userid) VALUES (%d, NOW(), %s, %s, %s, %d)";
+					$referer = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : null;
+					if (!$username AND isset($_COOKIE['comment_author_'.COOKIEHASH]))
+						$username = utf8_encode($_COOKIE['comment_author_'.COOKIEHASH]);
+					$wpdb->query($wpdb->prepare($sql, $id, $ip_addr, $referer, $username, $userid));
+				}
 			}
 			// Make sure the file is available for download
 			if (!$exists)
@@ -352,12 +372,15 @@ if (!class_exists('SimpleDownloadMonitor'))
 				$extensions = strval($_POST[self::PREFIX . 'extensions']);
 				$detailed = intval($_POST[self::PREFIX . 'detailed']);
 				$inline = strval($_POST[self::PREFIX . 'inline']);
+				$ignored_users = strval($_POST[self::PREFIX . 'ignored_users']);
+				$group_within = intval($_POST[self::PREFIX . 'group_within']);
 				// Remove slashes if necessary
 				if (get_magic_quotes_gpc())
 				{
 					$directories = stripslashes($directories);
 					$extensions = stripslashes($extensions);
 					$inline = stripslashes($inline);
+					$ignored_users = stripslashes($ignored_users);
 				}
 				// Escape the delimiter
 				list($directories, $extensions) = str_replace(self::PREG_DELIMITER, '\\'.self::PREG_DELIMITER, array($directories, $extensions));
@@ -366,12 +389,16 @@ if (!class_exists('SimpleDownloadMonitor'))
 				update_option(self::PREFIX . 'extensions', $extensions);
 				update_option(self::PREFIX . 'detailed', $detailed);
 				update_option(self::PREFIX . 'inline', $inline);
+				update_option(self::PREFIX . 'ignored_users', $ignored_users);
+				update_option(self::PREFIX . 'group_within', $group_within);
 			}
 			// Load options from the database
 			$directories = get_option(self::PREFIX . 'directories');
 			$extensions = get_option(self::PREFIX . 'extensions');
 			$detailed = get_option(self::PREFIX . 'detailed');
 			$inline = get_option(self::PREFIX . 'inline');
+			$ignored_users = get_option(self::PREFIX . 'ignored_users');
+			$group_within = intval(get_option(self::PREFIX . 'group_within'));
 			// Build the form
 			?>
 <div class="wrap">
@@ -393,6 +420,12 @@ if (!class_exists('SimpleDownloadMonitor'))
 	<h3><?php echo __("Store detailed logs?", self::GETTEXT_REALM); ?></h3>
 	<p><?php echo __("If detailed logs are allowed, various information (including exact time of download, user's IP address, referrer etc.) is stored. This can fill your database quickly if you have only a little space or a lot of popular downloads. Otherwise just the total numbers of downloads are stored, consuming significantly less space.", self::GETTEXT_REALM); ?></p>
 	<p><label for="<?php echo self::PREFIX; ?>detailed"><input type="checkbox" name="<?php echo self::PREFIX; ?>detailed" value="1" <?php if ($detailed) echo 'checked="checked" '; ?>/> <?php echo __('Use detailed statistics.', self::GETTEXT_REALM); ?></label></p>
+	<h3><?php echo __("Ignored users", self::GETTEXT_REALM); ?></h3>
+	<p><?php echo __("List of users whose downloads are not monitored. Separate multiple users with pipe character <code>|</code>. It is useful to prevent administrator damaging the statistics by testing that downloads work.", self::GETTEXT_REALM); ?></p>
+	<p><input type="text" name="<?php echo self::PREFIX; ?>ignored_users" value="<?php echo attribute_escape($ignored_users); ?>" /></p>
+	<h3><?php echo __("Ignore quick re-downloads", self::GETTEXT_REALM); ?></h3>
+	<p><?php echo __("If one IP address requests the same download several times within a given time interval, only the first time will be recorded. If a zero or a negative value is entered, all downloads will get recorded regardless of how quickly they occur after each other.", self::GETTEXT_REALM); ?></p>
+	<p><input type="text" name="<?php echo self::PREFIX; ?>group_within" value="<?php echo attribute_escape($group_within); ?>" /> <?php echo __('seconds', self::GETTEXT_REALM); ?></p>
 	<div class="submit"><input type="submit" name="SimpleDownloadMonitor_Submit" value="<?php echo __("Update settings", self::GETTEXT_REALM) ?>" /></div>
 </form>
 </div><?php
@@ -705,6 +738,7 @@ if (!class_exists('SimpleDownloadMonitor'))
 		<col class="sdmon-rownum" align="right" width="32" />
 		<col class="sdmon-date" align="center" />
 		<col class="sdmon-ipaddr" />
+		<col class="sdmon-country" />
 		<col class="sdmon-referer" />
 		<col class="sdmon-username" />
 		<col class="sdmon-tools" />
@@ -713,6 +747,7 @@ if (!class_exists('SimpleDownloadMonitor'))
 	<tr>
 		<th>&nbsp;</th>
 		<th><a href="<?php echo $this->GetUrlForList(array_merge($options, array('order' => self::ORDER_DATE   ))); ?>"><?php echo __("Date", self::GETTEXT_REALM); ?></a></th>
+		<th><?php echo __("Country", self::GETTEXT_REALM); ?></th>
 		<th><a href="<?php echo $this->GetUrlForList(array_merge($options, array('order' => self::ORDER_IP     ))); ?>"><?php echo __("IP address", self::GETTEXT_REALM); ?></a></th>
 		<th><a href="<?php echo $this->GetUrlForList(array_merge($options, array('order' => self::ORDER_REFERER))); ?>"><?php echo __("Referer", self::GETTEXT_REALM); ?></a></th>
 		<th><a href="<?php echo $this->GetUrlForList(array_merge($options, array('order' => self::ORDER_USER   ))); ?>"><?php echo __("Username", self::GETTEXT_REALM); ?></a></th>
@@ -724,17 +759,26 @@ if (!class_exists('SimpleDownloadMonitor'))
 				$where = $this->GetDetailWhere($flags);
 				$orderby = $this->GetDetailOrderBy($order);
 				$limit = $this->GetLimit($from);
-				$sql = "SELECT id, download_date, ip, referer, userid, username FROM ${table_details} WHERE download=%d ${where} ${orderby} ${limit}";
+				if (class_exists('PepakIpToCountry'))
+				{
+					$ip_loc = PepakIpToCountry::Subselect("INET_ATON(${table_details}.ip)", 'iso_code2');
+				}
+				else
+					$ip_loc = 'NULL';
+				$sql = "SELECT id, download_date, ip, referer, userid, username, ${ip_loc} iso_code2 FROM ${table_details} WHERE download=%d ${where} ${orderby} ${limit}";
 				$totalcount = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM ${table_details} WHERE download=%d ${where}", $download));
 				$results = $wpdb->get_results($wpdb->prepare($sql, $download), ARRAY_N);
 				$rownum = intval($options['from']);
 				foreach ($results as $row) {
 					$rownum++;
-					list($id, $date, $ip, $referer, $userid, $username) = $row;
+					list($id, $date, $ip, $referer, $userid, $username, $country) = $row;
+					$country = strtolower($country);
+					$country_flag = ($country && file_exists($this->plugin_dir.'/flags/'.$country.'.png')) ? $this->plugin_url.'/flags/'.$country.'.png' : '';
 					?>
 	<tr>
 		<td><?php echo $rownum; ?>.</td>
 		<td><?php echo mysql2date('Y-m-d h:i:s', $date, TRUE); ?></td>
+		<td><?php echo ($country_flag) ? '<img src="'.htmlspecialchars($country_flag).'" alt="'.$country.'" title="'.$country.'"/>' : $country; ?></td>
 		<td><?php echo htmlspecialchars($ip); ?></td>
 		<td><?php echo htmlspecialchars($referer); ?></td>
 		<td><?php echo htmlspecialchars($username); ?></td>

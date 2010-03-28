@@ -4,7 +4,7 @@ Donate link:
 Tags: files, counter, count, tracking, download monitor, monitor, downloads, download
 Requires at least: 2.8.0
 Tested up to: 2.9.1
-Stable tag: 0.11
+Stable tag: 0.12
 
 Count the number of downloads without having to maintain a comprehensive download page.
 
@@ -101,6 +101,35 @@ will fix any errors that are reported to me.
 3. Detailed statistics for a file
 
 == Changelog ==
+
+= 0.12 =
+
+* Support for country-flagging of each download. This feature requires
+  that my plugin Ip-to-Country ( http://wordpress.org/extend/plugins/ip-to-country/ )
+  is installed and set-up. 
+  
+  I am still undecided if it is better to assign countries when a download
+  occurs or leave it until a list of downloads is displayed. I can see
+  benefits and drawbacks for both solutions. At the moment the plugin
+  leaves country-assignment until the list is displayed, but I am interested
+  in hearing your thoughts about this decision.
+
+  This function is only supported with PHP5.
+
+* New setting for "ignored users". Downloads made by users whose names are
+  listed (in pipe-separated list) in configuration will not be monitored.
+  It is useful for admins who want to test that their download links work,
+  but don't want to record their tests as "downloads".
+
+* Ability to ignore downloads if someone requests one file from one IP address
+  several times within a short time interval. There is an option that let's
+  admin specify how long this interval is (in seconds), and if multiple downloads
+  of the same file from the same IP address happen within so many seconds of
+  each other, only the first one gets recorded. This is useful for download
+  accelerators which try to download one file in several pieces, with longer
+  time intervals also for redownloads (e.g. download fails the first time so
+  the user tries again).
+
 
 = 0.11 =
 
