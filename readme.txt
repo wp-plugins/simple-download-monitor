@@ -3,8 +3,8 @@ Contributors: Pepak
 Donate link:
 Tags: files, counter, count, tracking, download monitor, monitor, downloads, download
 Requires at least: 2.8.0
-Tested up to: 2.9.1
-Stable tag: 0.12
+Tested up to: 3.0.0
+Stable tag: 0.13
 
 Count the number of downloads without having to maintain a comprehensive download page.
 
@@ -102,6 +102,24 @@ will fix any errors that are reported to me.
 
 == Changelog ==
 
+= 0.13 =
+
+* Tested for co9mpatibility with WordPress 3.0. Older versions work with
+  it, too, but now it is "official".
+
+* Fixed date/time display to 24-hour format. Thanks Daniel for the report.
+
+* Test for path validity (directory and extension) is performed *before*
+  logging the download request, not after. This means that requests for
+  files which don't match the two regular expressions are logged as requests
+  to nonexistent files, while previously they were logged ads successful
+  downloads (even though they were not downloaded by the user who got an
+  error 404 instead).
+
+* Cosmetic fix for the paginator: links to first/previous page are displayed
+  on the left side of the table, links to next/last page on the right.
+
+
 = 0.12 =
 
 * Support for country-flagging of each download. This feature requires
@@ -137,11 +155,13 @@ will fix any errors that are reported to me.
   archives. As a result, PHP 4 version of the plugin was recompressed
   to 7Z ( http://www.7-zip.org ).
 
+
 = 0.10 =
 
 * Belorussian translation by FatCow ( http://www.fatcow.com )
 
 * PHP 4 version is also available (see the FAQ).
+
 
 = 0.09 =
 
@@ -150,7 +170,9 @@ will fix any errors that are reported to me.
 
 * Support for resumed transfers.
 
+
 = 0.08 =
+
 * Administrators can now delete download statistics from the Tools panel:
   A checkbox is shown next to each record, and a button for deleting checked
   records is provided at the bottom of the list. A button for deleting all
@@ -160,7 +182,9 @@ will fix any errors that are reported to me.
   Note: This function is only allowed for users with a "delete_user" 
   capability (by default, that means only Administrators).
 
+
 = 0.07 =
+
 * Simple Download Monitor now allows inline content, e.g. images and
   videos that display within pages rather than download as a file.
   By default, all files are set to download, but you can override this
@@ -169,11 +193,17 @@ will fix any errors that are reported to me.
   Note: Do not forget to add image extensions to Allowed Extensions -
   a file must be allowed to download before it can be "inlined".
 
+
 = 0.06 =
+
 * Fixed a bug on download display if no downloads were recorded.
 
+
 = 0.05 =
+
 * First intentional public release.
 
+
 = 0.04 =
+
 * Accidental premature public release due to my unfamiliarity with WordPress plugin repository.

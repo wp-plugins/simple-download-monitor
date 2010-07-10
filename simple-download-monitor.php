@@ -270,6 +270,10 @@ if (!class_exists('SimpleDownloadMonitor'))
 			$relfilename = substr($fullfilename, strlen(ABSPATH));
 			$relfilename = strtr($relfilename, '\\', '/');
 			$exists = (file_exists($fullfilename) AND !is_dir($fullfilename)) ? 1 : 0;
+			// Make sure it is a valid request
+			$dirregexp = self::PREG_DELIMITER . '^' . get_option(self::PREFIX . 'directories') . self::PREG_DELIMITER;
+			$extregexp = self::PREG_DELIMITER . '\\.' . get_option(self::PREFIX . 'extensions') . '$' . self::PREG_DELIMITER;
+			$valid = (preg_match($dirregexp, $relfilename) AND preg_match($extregexp, $relfilename)) ? 1 : 0;
 			// Get user information and decide if this user should be ignored
 			get_currentuserinfo();
 			$userid = $user_ID ? $user_ID : null;
@@ -292,13 +296,13 @@ if (!class_exists('SimpleDownloadMonitor'))
 					if ($monitor)
 					{
 						$sql = "UPDATE ${downloads} SET download_count=download_count+1, last_date=NOW(), file_exists=%d WHERE id=%d";
-						$wpdb->query($wpdb->prepare($sql, $exists, $id));
+						$wpdb->query($wpdb->prepare($sql, $exists * $valid, $id));
 					}
 				}
 				else
 				{
 					$sql = "INSERT INTO ${downloads} (filename, download_count, last_date, file_exists) VALUES (%s, 1, NOW(), %d)";
-					$wpdb->query($wpdb->prepare($sql, $filename, $exists));
+					$wpdb->query($wpdb->prepare($sql, $filename, $exists * $valid));
 					$id = $wpdb->insert_id;
 				}
 				// If details are requested, store them as well
@@ -311,14 +315,9 @@ if (!class_exists('SimpleDownloadMonitor'))
 					$wpdb->query($wpdb->prepare($sql, $id, $ip_addr, $referer, $username, $userid));
 				}
 			}
+			// If the file exists and is valid, download it
 			// Make sure the file is available for download
-			if (!$exists)
-				return FALSE;
-			$dirregexp = self::PREG_DELIMITER . '^' . get_option(self::PREFIX . 'directories') . self::PREG_DELIMITER;
-			if (!preg_match($dirregexp, $relfilename))
-				return FALSE;
-			$extregexp = self::PREG_DELIMITER . '\\.' . get_option(self::PREFIX . 'extensions') . '$' . self::PREG_DELIMITER;
-			if (!preg_match($extregexp, $relfilename))
+			if (!($exists * $valid))
 				return FALSE;
 			// Generate proper headers
 			$mimetype = '';
@@ -546,16 +545,20 @@ if (!class_exists('SimpleDownloadMonitor'))
 			$pages = array();
 			if ($from > 0)
 			{
+				$pages[] = '<div style="float: left;">';
 				$pages[] = '<a href="' . $this->GetUrlForList(array_merge($options, array('from'=>0))) . '">' . __("First", self::GETTEXT_REALM) . '</a>';
 				$pages[] = '<a href="' . $this->GetUrlForList(array_merge($options, array('from'=>($from>self::RECORDS_PER_PAGE ? $from-self::RECORDS_PER_PAGE : 0)))) . '">' . __("Previous", self::GETTEXT_REALM) . '</a>';
+				$pages[] = '</div>';
 			}
 
 			if (($from + self::RECORDS_PER_PAGE) < $count)
 			{
+				$pages[] = '<div style="float: right;">';
 				$pages[] = '<a href="' . $this->GetUrlForList(array_merge($options, array('from'=>$from+self::RECORDS_PER_PAGE))) . '">' . __("Next", self::GETTEXT_REALM) . '</a>';
 				$pages[] = '<a href="' . $this->GetUrlForList(array_merge($options, array('from'=>$count-self::RECORDS_PER_PAGE))) . '">' . __("Last", self::GETTEXT_REALM) . '</a>';
+				$pages[] = '</div>';
 			}
-			$result = $pages ? '<div class="pages-list">' . implode(' ', $pages) . '</div>' : '';
+			$result = $pages ? '<div class="pages-list">' . implode(' ', $pages) . '<div style="clear: both;" /></div>' : '';
 			return $result;
 		}
 
@@ -691,7 +694,7 @@ if (!class_exists('SimpleDownloadMonitor'))
 		<td><?php echo $rownum; ?>.</td>
 		<td><?php if ($detailed): ?><a href="<?php echo $this->GetUrlForList(array('download' => $download)); ?>"><?php endif; echo htmlspecialchars($filename); if ($detailed): ?></a><?php endif; ?></td>
 		<td><?php echo $count; ?></td>
-		<td><?php echo mysql2date('Y-m-d h:i:s', $date, TRUE); ?></td>
+		<td><?php echo mysql2date('Y-m-d H:i:s', $date, TRUE); ?></td>
 		<td><?php if ($this->IsAdmin()): ?><input type="checkbox" name="SimpleDownloadMonitor_DeleteIds[]" value="<?php echo $download; ?>" /><label for="SimpleDownloadMonitor_DeleteIds[]"> <?php echo __('Delete', self::GETTEXT_REALM); ?></label><?php else: ?>&nbsp;<?php endif; ?></td>
 	</tr>
 	</tbody><?php
@@ -777,7 +780,7 @@ if (!class_exists('SimpleDownloadMonitor'))
 					?>
 	<tr>
 		<td><?php echo $rownum; ?>.</td>
-		<td><?php echo mysql2date('Y-m-d h:i:s', $date, TRUE); ?></td>
+		<td><?php echo mysql2date('Y-m-d H:i:s', $date, TRUE); ?></td>
 		<td><?php echo ($country_flag) ? '<img src="'.htmlspecialchars($country_flag).'" alt="'.$country.'" title="'.$country.'"/>' : $country; ?></td>
 		<td><?php echo htmlspecialchars($ip); ?></td>
 		<td><?php echo htmlspecialchars($referer); ?></td>
