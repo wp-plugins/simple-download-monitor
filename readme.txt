@@ -104,7 +104,7 @@ will fix any errors that are reported to me.
 
 = 0.13 =
 
-* Tested for co9mpatibility with WordPress 3.0. Older versions work with
+* Tested for compatibility with WordPress 3.0. Older versions work with
   it, too, but now it is "official".
 
 * Fixed date/time display to 24-hour format. Thanks Daniel for the report.
