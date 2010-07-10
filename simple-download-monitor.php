@@ -4,7 +4,7 @@
 Plugin Name: Simple Download Monitor
 Plugin URI: http://www.pepak.net/wordpress/simple-download-monitor-plugin
 Description: Count the number of downloads without having to maintain a comprehensive download page.
-Version: 0.12
+Version: 0.13
 Author: Pepak
 Author URI: http://www.pepak.net
 */
