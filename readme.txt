@@ -47,6 +47,9 @@ username of people who download my files.
    Add this line directly above it:
    `RewriteRule ^(files/.*) /index.php?sdmon=$1 [L]`
    (replace 'files/' with your download directory).
+1. (Optional step) If you want to see country flags in the download stats page, download,
+   install, activate and set up my Country-To-IP Plugin ( http://wordpress.org/extend/plugins/ip-to-country/ ).
+   See changelog of version 0.12 for details.
 
 == Frequently Asked Questions ==
 
