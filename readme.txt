@@ -4,7 +4,7 @@ Donate link:
 Tags: files, counter, count, tracking, download monitor, monitor, downloads, download
 Requires at least: 2.8.0
 Tested up to: 3.0.1
-Stable tag: 0.16
+Stable tag: 0.17
 
 Count the number of downloads without having to maintain a comprehensive download page.
 
@@ -117,6 +117,10 @@ http://www.pepak.net/wordpress/simple-download-monitor-plugin/#comment-4729
 3. Detailed statistics for a file
 
 == Changelog ==
+
+= 0.17 =
+
+* Forgot to allow empty strings in "Inline files".
 
 = 0.16 =
 
