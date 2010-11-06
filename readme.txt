@@ -4,7 +4,7 @@ Donate link:
 Tags: files, counter, count, tracking, download monitor, monitor, downloads, download
 Requires at least: 2.8.0
 Tested up to: 3.0.0
-Stable tag: 0.13
+Stable tag: 0.15
 
 Count the number of downloads without having to maintain a comprehensive download page.
 
@@ -53,6 +53,10 @@ username of people who download my files.
 
 == Frequently Asked Questions ==
 
+= Where can I get support? =
+
+Support is provided at: http://forum.pepak.net
+
 = Why don't I see any files in the download statistics? =
 
 Because nobody downloaded any file yet. Simple Download Monitor does not
@@ -97,6 +101,15 @@ does work (PHP 5 is backwards compatible with PHP 4), but it may
 not work on a real PHP 4 as I have no test machine for it. But I
 will fix any errors that are reported to me.
 
+= How do I prevent monitoring of certain files? =
+
+There is no such functionality in Simple Download Monitor itself, because
+the user interface would become needlessly complex. You can achieve the
+same result through a proper record in the `.htaccess` file. See this
+comment for an example (Richie, 2010-07-21):
+
+http://www.pepak.net/wordpress/simple-download-monitor-plugin/#comment-4729
+
 == Screenshots ==
 
 1. Administrative options
@@ -104,6 +117,24 @@ will fix any errors that are reported to me.
 3. Detailed statistics for a file
 
 == Changelog ==
+
+= 0.15 =
+
+* User rights required to access various parts of the plugin's interface
+  are now configurable. This should satisfy the admins who don't want
+  their users to view download stats.
+
+* More explicitly explained the "Inline files" setting and tightened it
+  so that it must be at least three characters long to be valid.
+
+* Changed the captions of "delete" buttons to make it clear that only the
+  statistics get deleted, not the actual files.
+
+= 0.14 =
+
+* Changed country-flag-displaying code to use my IP-to-Country plugin in
+  version 0.03.
+
 
 = 0.13 =
 

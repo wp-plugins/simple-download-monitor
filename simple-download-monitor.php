@@ -4,7 +4,7 @@
 Plugin Name: Simple Download Monitor
 Plugin URI: http://www.pepak.net/wordpress/simple-download-monitor-plugin
 Description: Count the number of downloads without having to maintain a comprehensive download page.
-Version: 0.13
+Version: 0.15
 Author: Pepak
 Author URI: http://www.pepak.net
 */
@@ -31,7 +31,7 @@ if (!class_exists('SimpleDownloadMonitor'))
 	class SimpleDownloadMonitor
 	{
 
-		const VERSION = '0.12';
+		const VERSION = '0.15';
 		const PREFIX = 'sdmon_';
 		const PREG_DELIMITER = '`';
 		const GET_PARAM = 'sdmon';
@@ -94,6 +94,9 @@ if (!class_exists('SimpleDownloadMonitor'))
 			add_option(self::PREFIX . 'inline', '');
 			add_option(self::PREFIX . 'ignored_users', '');
 			add_option(self::PREFIX . 'group_within', '0');
+			add_option(self::PREFIX . 'rights_view', 'read');
+			add_option(self::PREFIX . 'rights_delete', 'delete_users');
+			add_option(self::PREFIX . 'rights_options', 'manage_options');
 		}
 
 		protected function table_downloads()
@@ -317,7 +320,7 @@ if (!class_exists('SimpleDownloadMonitor'))
 			}
 			// If the file exists and is valid, download it
 			// Make sure the file is available for download
-			if (!($exists * $valid))
+			if (!$exists OR !$valid)
 				return FALSE;
 			// Generate proper headers
 			$mimetype = '';
@@ -373,6 +376,9 @@ if (!class_exists('SimpleDownloadMonitor'))
 				$inline = strval($_POST[self::PREFIX . 'inline']);
 				$ignored_users = strval($_POST[self::PREFIX . 'ignored_users']);
 				$group_within = intval($_POST[self::PREFIX . 'group_within']);
+				$rights_view = strval($_POST[self::PREFIX . 'rights_view']);
+				$rights_delete = strval($_POST[self::PREFIX . 'rights_delete']);
+				$rights_options = strval($_POST[self::PREFIX . 'rights_options']);
 				// Remove slashes if necessary
 				if (get_magic_quotes_gpc())
 				{
@@ -387,9 +393,13 @@ if (!class_exists('SimpleDownloadMonitor'))
 				update_option(self::PREFIX . 'directories', $directories);
 				update_option(self::PREFIX . 'extensions', $extensions);
 				update_option(self::PREFIX . 'detailed', $detailed);
-				update_option(self::PREFIX . 'inline', $inline);
+				if (strlen($inline) >= 3)
+					update_option(self::PREFIX . 'inline', $inline);
 				update_option(self::PREFIX . 'ignored_users', $ignored_users);
 				update_option(self::PREFIX . 'group_within', $group_within);
+				update_option(self::PREFIX . 'rights_view', $rights_view);
+				update_option(self::PREFIX . 'rights_delete', $rights_delete);
+				update_option(self::PREFIX . 'rights_options', $rights_options);
 			}
 			// Load options from the database
 			$directories = get_option(self::PREFIX . 'directories');
@@ -398,11 +408,22 @@ if (!class_exists('SimpleDownloadMonitor'))
 			$inline = get_option(self::PREFIX . 'inline');
 			$ignored_users = get_option(self::PREFIX . 'ignored_users');
 			$group_within = intval(get_option(self::PREFIX . 'group_within'));
+			$rights_view = get_option(self::PREFIX . 'rights_view');
+			$rights_delete = get_option(self::PREFIX . 'rights_delete');
+			$rights_options = get_option(self::PREFIX . 'rights_options');
 			// Build the form
 			?>
 <div class="wrap">
 <form method="post" action="<?php echo $_SERVER['REQUEST_URI']; ?>">
 	<h2><?php echo __('Simple Download Monitor options', self::GETTEXT_REALM); ?></h2>
+	<h3><?php echo __('Access rights', self::GETTEXT_REALM); ?></h3>
+	<p><?php echo __('You can set up user rights required to access various functions of Simple Download Monitor. Rights are assigned through capabilities (see <a href="http://codex.wordpress.org/Roles_and_Capabilities#Roles">Roles and Capabilities</a> in WordPress Codex). Predefined values are <strong>read</strong> ("any registered user") for displaying stats, <strong>delete_users</strong> ("administrator") for reseting stats and <strong>manage_options</strong> ("administrator") for changing options.', self::GETTEXT_REALM); ?></p>
+	<p><?php echo __('Capability required for viewing download stats:', self::GETTEXT_REALM); ?></p>
+	<p><input type="text" name="<?php echo self::PREFIX; ?>rights_view" value="<?php echo attribute_escape($rights_view); ?>" /></p>
+	<p><?php echo __('Capability required for reseting download stats:', self::GETTEXT_REALM); ?></p>
+	<p><input type="text" name="<?php echo self::PREFIX; ?>rights_delete" value="<?php echo attribute_escape($rights_delete); ?>" /></p>
+	<p><?php echo __('Capability required for setting SDMON options:', self::GETTEXT_REALM); ?></p>
+	<p><input type="text" name="<?php echo self::PREFIX; ?>rights_options" value="<?php echo attribute_escape($rights_options); ?>" /></p>
 	<h3><?php echo __('Allowed directories', self::GETTEXT_REALM); ?></h3>
 	<p><?php echo __("Only requested files whose full names (relative to document root) start with this regular expression will be processed. It is strongly recommended to place all downloadable files (and ONLY downloadable files) into a designated directory and then placing that directory's name followed by a slash here. It is possible to use the power of PREG to allow multiple directories, but make sure there are ONLY files which you are comfortable with malicious users downloading. Do not EVER allow directories which contain PHP files here! That could lead to disclosure of sensitive data, including username and password used to connect to WordPress database.", self::GETTEXT_REALM); ?></p>
 	<p><?php echo __("Default value is <code>files/</code>, which only allows download from /files directory (the leading <code>/</code> is implicit).", self::GETTEXT_REALM); ?></p>
@@ -415,6 +436,7 @@ if (!class_exists('SimpleDownloadMonitor'))
 	<p><?php echo __('Files whose names match this regular expression will be displayed inline (within a HTML page) rather than downloaded.', self::GETTEXT_REALM); ?></p>
 	<p><?php echo __("By default, this value is empty - no files will appear inline, all will be downloaded. You may want to place something like <code>\.(jpe?g|gif|png|swf)$</code> here to make images and Flash videos appear inline.", self::GETTEXT_REALM); ?></p>
 	<p><?php echo __('Note: Unlike the options above, nothing is implied in this regular expression. You <em>must</em> use an explicit <code>\.</code> to denote "start of extension", you <em>must</em> use an explicit <code>$</code> to mark "end of filename", etc.', self::GETTEXT_REALM); ?></p>
+	<p><?php echo __('Also note that this plugin uses PCRE-compatible regular expressions, NOT the better-known POSIX-compatible regular expressions. As a result, a valid regular expression must be at least three characters long - separator twice, and at least one character for a meaningful r.e.', self::GETTEXT_REALM); ?></p>
 	<p><input type="text" name="<?php echo self::PREFIX; ?>inline" value="<?php echo attribute_escape($inline); ?>" /></p>
 	<h3><?php echo __("Store detailed logs?", self::GETTEXT_REALM); ?></h3>
 	<p><?php echo __("If detailed logs are allowed, various information (including exact time of download, user's IP address, referrer etc.) is stored. This can fill your database quickly if you have only a little space or a lot of popular downloads. Otherwise just the total numbers of downloads are stored, consuming significantly less space.", self::GETTEXT_REALM); ?></p>
@@ -564,7 +586,7 @@ if (!class_exists('SimpleDownloadMonitor'))
 
 		protected function IsAdmin()
 		{
-			if (current_user_can('delete_users'))
+			if (current_user_can(get_option(self::PREFIX . 'rights_delete')))
 			/*
 			global $user_level;
 			get_currentuserinfo();
@@ -695,7 +717,7 @@ if (!class_exists('SimpleDownloadMonitor'))
 		<td><?php if ($detailed): ?><a href="<?php echo $this->GetUrlForList(array('download' => $download)); ?>"><?php endif; echo htmlspecialchars($filename); if ($detailed): ?></a><?php endif; ?></td>
 		<td><?php echo $count; ?></td>
 		<td><?php echo mysql2date('Y-m-d H:i:s', $date, TRUE); ?></td>
-		<td><?php if ($this->IsAdmin()): ?><input type="checkbox" name="SimpleDownloadMonitor_DeleteIds[]" value="<?php echo $download; ?>" /><label for="SimpleDownloadMonitor_DeleteIds[]"> <?php echo __('Delete', self::GETTEXT_REALM); ?></label><?php else: ?>&nbsp;<?php endif; ?></td>
+		<td><?php if ($this->IsAdmin()): ?><input type="checkbox" name="SimpleDownloadMonitor_DeleteIds[]" value="<?php echo $download; ?>" /><label for="SimpleDownloadMonitor_DeleteIds[]"> <?php echo __('Reset this statistic', self::GETTEXT_REALM); ?></label><?php else: ?>&nbsp;<?php endif; ?></td>
 	</tr>
 	</tbody><?php
 				}
@@ -703,8 +725,8 @@ if (!class_exists('SimpleDownloadMonitor'))
 		?>
 </table>
 <?php if ($this->isAdmin()): ?>
-<div><input type="submit" name="SimpleDownloadMonitor_Delete" value="<?php echo __('Delete Checked', self::GETTEXT_REALM); ?>" /></div>
-<div><input type="submit" name="SimpleDownloadMonitor_DeleteAll" value="<?php echo __('Delete All', self::GETTEXT_REALM); ?>" /> - <input type="checkbox" name="SimpleDownloadMonitor_DeleteAllReally" value="yes" /><label for="SimpleDownloadMonitor_DeleteAllReally"> <?php echo __('Yes, I am sure', self::GETTEXT_REALM); ?></label></div>
+<div><input type="submit" name="SimpleDownloadMonitor_Delete" value="<?php echo __('Reset checked statistics', self::GETTEXT_REALM); ?>" /></div>
+<div><input type="submit" name="SimpleDownloadMonitor_DeleteAll" value="<?php echo __('Reset all statistics', self::GETTEXT_REALM); ?>" /> - <input type="checkbox" name="SimpleDownloadMonitor_DeleteAllReally" value="yes" /><label for="SimpleDownloadMonitor_DeleteAllReally"> <?php echo __('Yes, I am sure', self::GETTEXT_REALM); ?></label></div>
 </form>
 <?php endif; ?>
 <?php echo $this->Paginator($options, $totalcount); ?>
@@ -775,17 +797,22 @@ if (!class_exists('SimpleDownloadMonitor'))
 				foreach ($results as $row) {
 					$rownum++;
 					list($id, $date, $ip, $referer, $userid, $username, $country) = $row;
-					$country = strtolower($country);
-					$country_flag = ($country && file_exists($this->plugin_dir.'/flags/'.$country.'.png')) ? $this->plugin_url.'/flags/'.$country.'.png' : '';
+					if (class_exists('PepakIpToCountry') AND (PepakIpToCountry::VERSION>='0.03'))
+						$country_flag = PepakIpToCountry::IP_to_Country_Flag($ip);
+					else
+					{
+						$country = strtolower($country);
+						$country_flag = ($country && file_exists($this->plugin_dir.'/flags/'.$country.'.png')) ? '<img src="'.$this->plugin_url.'/flags/'.$country.'.png" alt="'.$country.'" />' : '';
+					}
 					?>
 	<tr>
 		<td><?php echo $rownum; ?>.</td>
 		<td><?php echo mysql2date('Y-m-d H:i:s', $date, TRUE); ?></td>
-		<td><?php echo ($country_flag) ? '<img src="'.htmlspecialchars($country_flag).'" alt="'.$country.'" title="'.$country.'"/>' : $country; ?></td>
+		<td><?php echo ($country_flag) ? $country_flag : '&nbsp;'; ?></td>
 		<td><?php echo htmlspecialchars($ip); ?></td>
 		<td><?php echo htmlspecialchars($referer); ?></td>
 		<td><?php echo htmlspecialchars($username); ?></td>
-		<td><?php if ($this->IsAdmin()): ?><input type="checkbox" name="SimpleDownloadMonitor_DeleteIds[]" value="<?php echo $id; ?>" /><label for="SimpleDownloadMonitor_DeleteIds[]"> <?php echo __('Delete', self::GETTEXT_REALM); ?></label><?php else: ?>&nbsp;<?php endif; ?></td>
+		<td><?php if ($this->IsAdmin()): ?><input type="checkbox" name="SimpleDownloadMonitor_DeleteIds[]" value="<?php echo $id; ?>" /><label for="SimpleDownloadMonitor_DeleteIds[]"> <?php echo __('Delete this statistic', self::GETTEXT_REALM); ?></label><?php else: ?>&nbsp;<?php endif; ?></td>
 	</tr>
 	</tbody><?php
 				}
@@ -793,10 +820,10 @@ if (!class_exists('SimpleDownloadMonitor'))
 		?>
 </table>
 <?php if ($this->isAdmin()): ?>
-<div><input type="submit" name="SimpleDownloadMonitor_DeleteDetail" value="<?php echo __('Delete Checked', self::GETTEXT_REALM); ?>" /></div>
+<div><input type="submit" name="SimpleDownloadMonitor_DeleteDetail" value="<?php echo __('Delete checked statistics', self::GETTEXT_REALM); ?>" /></div>
 </form>
 <form method="post" action="<?php echo $_SERVER['REQUEST_URI']; ?>">
-<div><input type="submit" name="SimpleDownloadMonitor_Delete" value="<?php echo __('Delete All', self::GETTEXT_REALM); ?>" /> - <input type="checkbox" name="SimpleDownloadMonitor_DeleteIds[]" value="<?php echo $download; ?>" /> <?php echo __('Yes, I am sure', self::GETTEXT_REALM); ?></label></div>
+<div><input type="submit" name="SimpleDownloadMonitor_Delete" value="<?php echo __('Delete all statistics', self::GETTEXT_REALM); ?>" /> - <input type="checkbox" name="SimpleDownloadMonitor_DeleteIds[]" value="<?php echo $download; ?>" /> <?php echo __('Yes, I am sure', self::GETTEXT_REALM); ?></label></div>
 </form>
 <?php endif; ?>
 <?php echo $this->Paginator($options, $totalcount); ?>
@@ -822,8 +849,12 @@ if (!function_exists('SimpleDownloadMonitor_BuildAdminMenu'))
 		global $sdmon;
 		if (isset($sdmon))
 		{
-			$options_page = add_options_page(__('Simple Download Monitor options', SimpleDownloadMonitor::GETTEXT_REALM), __('Simple Download Monitor', SimpleDownloadMonitor::GETTEXT_REALM), 'manage_options', basename(__FILE__), array(&$sdmon, 'AdminPanel'));
-			$tool_page = add_submenu_page('tools.php', __('Simple Download Monitor', SimpleDownloadMonitor::GETTEXT_REALM), __('Simple Download Monitor', SimpleDownloadMonitor::GETTEXT_REALM), 'read', basename(__FILE__), array(&$sdmon, 'ToolsPanel'));
+			$rights_options = get_option(SimpleDownloadMonitor::PREFIX . 'rights_options');
+			$rights_view = get_option(SimpleDownloadMonitor::PREFIX . 'rights_view');
+			if (!$rights_options) $rights_options = 'manage_options';
+			if (!$rights_view) $rights_view = 'read';
+			$options_page = add_options_page(__('Simple Download Monitor options', SimpleDownloadMonitor::GETTEXT_REALM), __('Simple Download Monitor', SimpleDownloadMonitor::GETTEXT_REALM), $rights_options, basename(__FILE__), array(&$sdmon, 'AdminPanel'));
+			$tool_page = add_submenu_page('tools.php', __('Simple Download Monitor', SimpleDownloadMonitor::GETTEXT_REALM), __('Simple Download Monitor', SimpleDownloadMonitor::GETTEXT_REALM), $rights_view, basename(__FILE__), array(&$sdmon, 'ToolsPanel'));
 			add_action('admin_head-'.$tool_page, array(&$sdmon, 'ActionHead'));
 		}
 	}
