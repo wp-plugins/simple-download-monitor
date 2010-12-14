@@ -3,8 +3,8 @@ Contributors: Pepak
 Donate link:
 Tags: files, counter, count, tracking, download monitor, monitor, downloads, download
 Requires at least: 2.8.0
-Tested up to: 3.0.1
-Stable tag: 0.17
+Tested up to: 3.0.3
+Stable tag: 0.18
 
 Count the number of downloads without having to maintain a comprehensive download page.
 
@@ -117,6 +117,16 @@ http://www.pepak.net/wordpress/simple-download-monitor-plugin/#comment-4729
 3. Detailed statistics for a file
 
 == Changelog ==
+
+= 0.18 =
+
+* When Simple Download Monitor was used in conjunction with W3 Total Cache
+  (and possibly others), a file just a few megabytes long could cause
+  "Internal Server Errors". This is now fixed, along with any and all
+  output buffering plugins.
+
+* Simple Download Monitor wasn't compatible with webhosters who provide
+  the fileinfo extension in conjunction with PHP older than 5.3.
 
 = 0.17 =
 

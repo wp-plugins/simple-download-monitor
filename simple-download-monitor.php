@@ -4,7 +4,7 @@
 Plugin Name: Simple Download Monitor
 Plugin URI: http://www.pepak.net/wordpress/simple-download-monitor-plugin
 Description: Count the number of downloads without having to maintain a comprehensive download page.
-Version: 0.17
+Version: 0.18
 Author: Pepak
 Author URI: http://www.pepak.net
 */
@@ -31,7 +31,7 @@ if (!class_exists('SimpleDownloadMonitor'))
 	class SimpleDownloadMonitor
 	{
 
-		const VERSION = '0.17';
+		const VERSION = '0.18';
 		const PREFIX = 'sdmon_';
 		const PREG_DELIMITER = '`';
 		const GET_PARAM = 'sdmon';
@@ -160,7 +160,7 @@ if (!class_exists('SimpleDownloadMonitor'))
 		  }
 		}
 
-		function buffered_read($file, $bytes, $buffer_size=1024){
+		function buffered_read($file, $bytes, $buffer_size=65536){
 		  /*
 		  Outputs up to $bytes from the file $file to standard output, $buffer_size bytes at a time.
 		  */
@@ -189,6 +189,10 @@ if (!class_exists('SimpleDownloadMonitor'))
 		  multipart message. The multipart media type used for this purpose is 
 		  "multipart/byteranges".
 		  */
+
+		  // Clean all buffering components, if any.
+                  while (ob_list_handlers()) 
+                    ob_end_clean();
 
 		  $filesize=filesize($filename);
 		  $file=fopen($filename,"rb");
@@ -255,7 +259,7 @@ if (!class_exists('SimpleDownloadMonitor'))
 		    header("Content-Type: $mimetype");
 		    if ($disposition) 
 		    	header("Content-Disposition: $disposition");
-		    readfile($filename);
+		    $this->buffered_read($file, $filesize);
 		  }
 		  fclose($file);
 		}
@@ -324,7 +328,7 @@ if (!class_exists('SimpleDownloadMonitor'))
 				return FALSE;
 			// Generate proper headers
 			$mimetype = '';
-			if (function_exists('finfo_open'))
+			if (function_exists('finfo_open') AND defined('FILEINFO_MIME_TYPE'))
 			{
 				$finfo = finfo_open(FILEINFO_MIME_TYPE);
 				$mimetype = finfo_file($finfo, $fullfilename);
