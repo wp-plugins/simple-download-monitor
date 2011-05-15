@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=paypa
 Tags: files, counter, count, tracking, download monitor, monitor, downloads, download
 Requires at least: 2.8.0
 Tested up to: 3.0.3
-Stable tag: 0.19
+Stable tag: 0.20
 
 Count the number of downloads without having to maintain a comprehensive download page.
 
@@ -117,6 +117,11 @@ http://www.pepak.net/wordpress/simple-download-monitor-plugin/#comment-4729
 3. Detailed statistics for a file
 
 == Changelog ==
+
+= 0.20 =
+
+* Important! You need to deactivate and reactivate the plugin after upgrade
+  to version 0.19.
 
 = 0.19 =
 
