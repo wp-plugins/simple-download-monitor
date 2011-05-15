@@ -3,6 +3,8 @@
 #sdmon .sdmon-count { text-align: right; }
 #sdmon .sdmon-date { width: 24ex; text-align: center; }
 #sdmon .sdmon-nonex { width: 5ex; text-align: center; }
+#sdmon .sdmon-hidden { width: 15ex; }
+#sdmon .sdmon-delete { width: 15ex; }
 #sdmon .sdmon-ipaddr { }
 #sdmon .sdmon-referer { }
 #sdmon .sdmon-username { }

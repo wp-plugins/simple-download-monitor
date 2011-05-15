@@ -1,10 +1,10 @@
 === Plugin Name ===
 Contributors: Pepak
-Donate link:
+Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=paypal.com@pepak.net&currency_code=USD
 Tags: files, counter, count, tracking, download monitor, monitor, downloads, download
 Requires at least: 2.8.0
 Tested up to: 3.0.3
-Stable tag: 0.18
+Stable tag: 0.19
 
 Count the number of downloads without having to maintain a comprehensive download page.
 
@@ -117,6 +117,25 @@ http://www.pepak.net/wordpress/simple-download-monitor-plugin/#comment-4729
 3. Detailed statistics for a file
 
 == Changelog ==
+
+= 0.19 =
+
+* Filenames are now returned quoted, which allows proper download of files 
+  with a space in their filenames. Thanks Sameh Farouk for the tip.
+
+* Possibility to limit the number of downloads per IP address and day. When
+  the number is exceeded, the user gets an error message.
+
+  This functionality requires detailed logs to be turned on. Ignored users 
+  can always download as many files as they want.
+
+* Support for a sidebar widget showing top-10 (or top-anything) most 
+  downloaded files (either all files or those matching a given mask).
+
+* The user who has rights to delete statistics can now mark some downloads
+  as hidden. This setting only affects the sidebar widget and is mostly 
+  intended to remove obsolete versions of files from the list while keeping
+  the download statistics themselves.
 
 = 0.18 =
 

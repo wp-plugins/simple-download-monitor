@@ -4,7 +4,7 @@
 Plugin Name: Simple Download Monitor
 Plugin URI: http://www.pepak.net/wordpress/simple-download-monitor-plugin
 Description: Count the number of downloads without having to maintain a comprehensive download page.
-Version: 0.18
+Version: 0.19
 Author: Pepak
 Author URI: http://www.pepak.net
 */
@@ -31,7 +31,7 @@ if (!class_exists('SimpleDownloadMonitor'))
 	class SimpleDownloadMonitor
 	{
 
-		const VERSION = '0.18';
+		const VERSION = '0.19';
 		const PREFIX = 'sdmon_';
 		const PREG_DELIMITER = '`';
 		const GET_PARAM = 'sdmon';
@@ -66,6 +66,7 @@ if (!class_exists('SimpleDownloadMonitor'))
 				download_count INTEGER NOT NULL,
 				last_date TIMESTAMP NOT NULL,
 				file_exists TINYINT,
+				hide_from_sidebar TINYINT,
 				PRIMARY KEY  id (id),
 				KEY  download_count (download_count),
 				KEY  last_date (last_date)
@@ -97,9 +98,12 @@ if (!class_exists('SimpleDownloadMonitor'))
 			add_option(self::PREFIX . 'rights_view', 'read');
 			add_option(self::PREFIX . 'rights_delete', 'delete_users');
 			add_option(self::PREFIX . 'rights_options', 'manage_options');
+			add_option(self::PREFIX . 'max_downloads_per_ip_and_day', '0');
+			add_option(self::PREFIX . 'max_downloads_per_ip_and_day_registered', '0');
+			add_option(self::PREFIX . 'error_download_limit', '');
 		}
 
-		protected function table_downloads()
+		public function table_downloads()
 		{
 			static $table = null;
 			if ($table == null)
@@ -107,7 +111,7 @@ if (!class_exists('SimpleDownloadMonitor'))
 			return $table;
 		}
 
-		protected function table_details()
+		public function table_details()
 		{
 			static $table = null;
 			if ($table == null)
@@ -265,6 +269,25 @@ if (!class_exists('SimpleDownloadMonitor'))
 		}
 		//-----------------------------------------------------------------------------------
 
+		protected function ErrorMessage($code, $message, $shortmessage)
+		{
+			$code = intval($code);
+			// Clean all buffering components, if any.
+			while (ob_list_handlers()) 
+				ob_end_clean();
+			header('Cache-control: no-cache');
+			if ($code >= 200)
+				header(sprintf('%s %d %s', $_SERVER["SERVER_PROTOCOL"], $code, $shortmessage));
+			get_header();
+?><div class="error">
+	<h2><?php echo __("Simple Download Monitor error", self::GETTEXT_REALM); ?></h2>
+	<p><?php echo $message; ?></p>
+<?php
+			get_sidebar();
+			get_footer();
+			die();
+		}
+		
 		public function Download($filename)
 		{
 			global $wpdb, $user_login, $user_ID;
@@ -289,6 +312,19 @@ if (!class_exists('SimpleDownloadMonitor'))
 			$monitor = empty($username) || empty($ignored_users) || (!in_array($username, explode('|', $ignored_users)));
 			if ($monitor)
 			{
+				// Check the number of downloads per IP and day
+				$max_downloads = intval(get_option(self::PREFIX . (is_user_logged_in() ? 'max_downloads_per_ip_and_day_registered' : 'max_downloads_per_ip_and_day')));
+				if ($max_downloads > 0)
+				{
+					$row = $wpdb->get_row($wpdb->prepare("SELECT COUNT(*) count, MIN(TIMESTAMPDIFF(MINUTE, NOW(), TIMESTAMPADD(DAY, 1, download_date))) retry FROM ${details} WHERE (download_date > TIMESTAMPADD(DAY, -1, NOW())) AND ip=%s", $ip_addr), ARRAY_N);
+					list($download_count, $retry_minutes) = $row;
+					if ($download_count >= $max_downloads)
+					{
+						$msg = get_option(self::PREFIX . 'error_download_limit');
+						if ($msg == '') $msg = __("You have exceeded your download quota today. Please try again in %d hours and %d minutes.", self::GETTEXT_REALM);
+						$this->ErrorMessage(403, sprintf($msg, $retry_minutes/60, abs($retry_minutes%60)), 'Forbidden');
+					}
+				}
 				// Store uncorrected request name to database for security/mistake review
 				$id = $wpdb->get_var($wpdb->prepare("SELECT id FROM ${downloads} WHERE filename=%s", $filename));
 				if ($id)
@@ -325,7 +361,7 @@ if (!class_exists('SimpleDownloadMonitor'))
 			// If the file exists and is valid, download it
 			// Make sure the file is available for download
 			if (!$exists OR !$valid)
-				return FALSE;
+				$this->ErrorMessage(404, sprintf(__("Requested file <strong>%s</strong> not found."), htmlspecialchars($filename)), 'Not found');
 			// Generate proper headers
 			$mimetype = '';
 			if (function_exists('finfo_open') AND defined('FILEINFO_MIME_TYPE'))
@@ -341,7 +377,7 @@ if (!class_exists('SimpleDownloadMonitor'))
 			$inlineregexp = self::PREG_DELIMITER . get_option(self::PREFIX . 'inline') . self::PREG_DELIMITER;
 			if ($inlineregexp && preg_match($inlineregexp, $relfilename))
 				$disposition = 'inline';
-			$disposition = $disposition . '; filename=' . basename($fullfilename);
+			$disposition = $disposition . '; filename="' . basename($fullfilename) . '"';
 			$this->byteserve($fullfilename, $mimetype, $disposition);
 			// Successful end
 			return TRUE;
@@ -383,6 +419,9 @@ if (!class_exists('SimpleDownloadMonitor'))
 				$rights_view = strval($_POST[self::PREFIX . 'rights_view']);
 				$rights_delete = strval($_POST[self::PREFIX . 'rights_delete']);
 				$rights_options = strval($_POST[self::PREFIX . 'rights_options']);
+				$downloads_per_day = intval($_POST[self::PREFIX . 'max_downloads_per_ip_and_day']);
+				$downloads_per_day_registered = intval($_POST[self::PREFIX . 'max_downloads_per_ip_and_day_registered']);
+				$error_download_limit = strval($_POST[self::PREFIX . 'error_download_limit']);
 				// Remove slashes if necessary
 				if (get_magic_quotes_gpc())
 				{
@@ -390,6 +429,7 @@ if (!class_exists('SimpleDownloadMonitor'))
 					$extensions = stripslashes($extensions);
 					$inline = stripslashes($inline);
 					$ignored_users = stripslashes($ignored_users);
+					$error_download_limit = stripslashes($error_download_limit);
 				}
 				// Escape the delimiter
 				list($directories, $extensions) = str_replace(self::PREG_DELIMITER, '\\'.self::PREG_DELIMITER, array($directories, $extensions));
@@ -404,6 +444,9 @@ if (!class_exists('SimpleDownloadMonitor'))
 				update_option(self::PREFIX . 'rights_view', $rights_view);
 				update_option(self::PREFIX . 'rights_delete', $rights_delete);
 				update_option(self::PREFIX . 'rights_options', $rights_options);
+				update_option(self::PREFIX . 'max_downloads_per_ip_and_day', $downloads_per_day);
+				update_option(self::PREFIX . 'max_downloads_per_ip_and_day_registered', $downloads_per_day_registered);
+				update_option(self::PREFIX . 'error_download_limit', $error_download_limit);
 			}
 			// Load options from the database
 			$directories = get_option(self::PREFIX . 'directories');
@@ -415,6 +458,9 @@ if (!class_exists('SimpleDownloadMonitor'))
 			$rights_view = get_option(self::PREFIX . 'rights_view');
 			$rights_delete = get_option(self::PREFIX . 'rights_delete');
 			$rights_options = get_option(self::PREFIX . 'rights_options');
+			$downloads_per_day = get_option(self::PREFIX . 'max_downloads_per_ip_and_day');
+			$downloads_per_day_registered = get_option(self::PREFIX . 'max_downloads_per_ip_and_day_registered');
+			$error_download_limit = get_option(self::PREFIX . 'error_download_limit');
 			// Build the form
 			?>
 <div class="wrap">
@@ -423,34 +469,43 @@ if (!class_exists('SimpleDownloadMonitor'))
 	<h3><?php echo __('Access rights', self::GETTEXT_REALM); ?></h3>
 	<p><?php echo __('You can set up user rights required to access various functions of Simple Download Monitor. Rights are assigned through capabilities (see <a href="http://codex.wordpress.org/Roles_and_Capabilities#Roles">Roles and Capabilities</a> in WordPress Codex). Predefined values are <strong>read</strong> ("any registered user") for displaying stats, <strong>delete_users</strong> ("administrator") for reseting stats and <strong>manage_options</strong> ("administrator") for changing options.', self::GETTEXT_REALM); ?></p>
 	<p><?php echo __('Capability required for viewing download stats:', self::GETTEXT_REALM); ?></p>
-	<p><input type="text" name="<?php echo self::PREFIX; ?>rights_view" value="<?php echo attribute_escape($rights_view); ?>" /></p>
+	<p><input type="text" name="<?php echo self::PREFIX; ?>rights_view" value="<?php echo esc_attr($rights_view); ?>" /></p>
 	<p><?php echo __('Capability required for reseting download stats:', self::GETTEXT_REALM); ?></p>
-	<p><input type="text" name="<?php echo self::PREFIX; ?>rights_delete" value="<?php echo attribute_escape($rights_delete); ?>" /></p>
+	<p><input type="text" name="<?php echo self::PREFIX; ?>rights_delete" value="<?php echo esc_attr($rights_delete); ?>" /></p>
 	<p><?php echo __('Capability required for setting SDMON options:', self::GETTEXT_REALM); ?></p>
-	<p><input type="text" name="<?php echo self::PREFIX; ?>rights_options" value="<?php echo attribute_escape($rights_options); ?>" /></p>
+	<p><input type="text" name="<?php echo self::PREFIX; ?>rights_options" value="<?php echo esc_attr($rights_options); ?>" /></p>
 	<h3><?php echo __('Allowed directories', self::GETTEXT_REALM); ?></h3>
 	<p><?php echo __("Only requested files whose full names (relative to document root) start with this regular expression will be processed. It is strongly recommended to place all downloadable files (and ONLY downloadable files) into a designated directory and then placing that directory's name followed by a slash here. It is possible to use the power of PREG to allow multiple directories, but make sure there are ONLY files which you are comfortable with malicious users downloading. Do not EVER allow directories which contain PHP files here! That could lead to disclosure of sensitive data, including username and password used to connect to WordPress database.", self::GETTEXT_REALM); ?></p>
 	<p><?php echo __("Default value is <code>files/</code>, which only allows download from /files directory (the leading <code>/</code> is implicit).", self::GETTEXT_REALM); ?></p>
-	<p><input type="text" name="<?php echo self::PREFIX; ?>directories" value="<?php echo attribute_escape($directories); ?>" /></p>
+	<p><input type="text" name="<?php echo self::PREFIX; ?>directories" value="<?php echo esc_attr($directories); ?>" /></p>
 	<h3><?php echo __('Allowed extensions', self::GETTEXT_REALM); ?></h3>
 	<p><?php echo __('Only files with extensions matching this regular expressions will be processed. This is another important security value. Make sure you only add extensions which are safe for malicious users to have, e.g. archives and possibly images. Do NOT use any expression that could allow a user to download PHP files, even if you think it safe given the Allowed Directories option above.', self::GETTEXT_REALM); ?></p>
 	<p><?php echo __("Default value is <code>zip|rar|7z</code> which only allows download of files ending with <code>.zip</code>, <code>.rar</code> and <code>.7z</code> (the leading <code>.</code> is implicit).", self::GETTEXT_REALM); ?></p>
-	<p><input type="text" name="<?php echo self::PREFIX; ?>extensions" value="<?php echo attribute_escape($extensions); ?>" /></p>
+	<p><input type="text" name="<?php echo self::PREFIX; ?>extensions" value="<?php echo esc_attr($extensions); ?>" /></p>
 	<h3><?php echo __('Inline files', self::GETTEXT_REALM); ?></h3>
 	<p><?php echo __('Files whose names match this regular expression will be displayed inline (within a HTML page) rather than downloaded.', self::GETTEXT_REALM); ?></p>
 	<p><?php echo __("By default, this value is empty - no files will appear inline, all will be downloaded. You may want to place something like <code>\.(jpe?g|gif|png|swf)$</code> here to make images and Flash videos appear inline.", self::GETTEXT_REALM); ?></p>
 	<p><?php echo __('Note: Unlike the options above, nothing is implied in this regular expression. You <em>must</em> use an explicit <code>\.</code> to denote "start of extension", you <em>must</em> use an explicit <code>$</code> to mark "end of filename", etc.', self::GETTEXT_REALM); ?></p>
 	<p><?php echo __('Also note that this plugin uses PCRE-compatible regular expressions, NOT the better-known POSIX-compatible regular expressions. As a result, a valid regular expression must be at least three characters long - separator twice, and at least one character for a meaningful r.e.', self::GETTEXT_REALM); ?></p>
-	<p><input type="text" name="<?php echo self::PREFIX; ?>inline" value="<?php echo attribute_escape($inline); ?>" /></p>
+	<p><input type="text" name="<?php echo self::PREFIX; ?>inline" value="<?php echo esc_attr($inline); ?>" /></p>
 	<h3><?php echo __("Store detailed logs?", self::GETTEXT_REALM); ?></h3>
 	<p><?php echo __("If detailed logs are allowed, various information (including exact time of download, user's IP address, referrer etc.) is stored. This can fill your database quickly if you have only a little space or a lot of popular downloads. Otherwise just the total numbers of downloads are stored, consuming significantly less space.", self::GETTEXT_REALM); ?></p>
 	<p><label for="<?php echo self::PREFIX; ?>detailed"><input type="checkbox" name="<?php echo self::PREFIX; ?>detailed" value="1" <?php if ($detailed) echo 'checked="checked" '; ?>/> <?php echo __('Use detailed statistics.', self::GETTEXT_REALM); ?></label></p>
 	<h3><?php echo __("Ignored users", self::GETTEXT_REALM); ?></h3>
 	<p><?php echo __("List of users whose downloads are not monitored. Separate multiple users with pipe character <code>|</code>. It is useful to prevent administrator damaging the statistics by testing that downloads work.", self::GETTEXT_REALM); ?></p>
-	<p><input type="text" name="<?php echo self::PREFIX; ?>ignored_users" value="<?php echo attribute_escape($ignored_users); ?>" /></p>
+	<p><input type="text" name="<?php echo self::PREFIX; ?>ignored_users" value="<?php echo esc_attr($ignored_users); ?>" /></p>
 	<h3><?php echo __("Ignore quick re-downloads", self::GETTEXT_REALM); ?></h3>
 	<p><?php echo __("If one IP address requests the same download several times within a given time interval, only the first time will be recorded. If a zero or a negative value is entered, all downloads will get recorded regardless of how quickly they occur after each other.", self::GETTEXT_REALM); ?></p>
-	<p><input type="text" name="<?php echo self::PREFIX; ?>group_within" value="<?php echo attribute_escape($group_within); ?>" /> <?php echo __('seconds', self::GETTEXT_REALM); ?></p>
+	<p><input type="text" name="<?php echo self::PREFIX; ?>group_within" value="<?php echo esc_attr($group_within); ?>" /> <?php echo __('seconds', self::GETTEXT_REALM); ?></p>
+	<h3><?php echo __("Limit number of downloads per IP address", self::GETTEXT_REALM); ?></h3>
+	<p><?php echo __("Limit the number of files an IP address can download per day. The default value of zero means 'no limits' - an IP address can download as many files as it likes. Note that various download managers can initiate several downloads for each file, so make sure the limit is high enough not to interfere with the normal usage of your site. Also, please understand that this is NOT a perfect solution: One IP address can be shared by multiple users, and one user can easily use more than one IP address.", self::GETTEXT_REALM); ?></p>
+	<p><?php echo __("Users listed in the <strong>Ignored users</strong> section above can always download an unlimited number of files.", self::GETTEXT_REALM); ?></p>
+	<p><?php echo __("Visitors:", self::GETTEXT_REALM); ?> <input type="text" name="<?php echo self::PREFIX; ?>max_downloads_per_ip_and_day" value="<?php echo esc_attr($downloads_per_day); ?>" /></p>
+	<p><?php echo __("Registered users:", self::GETTEXT_REALM); ?> <input type="text" name="<?php echo self::PREFIX; ?>max_downloads_per_ip_and_day_registered" value="<?php echo esc_attr($downloads_per_day_registered); ?>" /></p>
+	<p><?php echo __("Error message:", self::GETTEXT_REALM); ?></p>
+	<p><textarea name="<?php echo self::PREFIX; ?>error_download_limit" rows="4" cols="64"><?php echo htmlspecialchars($error_download_limit); ?></textarea></p>
+	<p><?php echo __("(The first <code>%d</code> will be replaced by number of hours, the second one by number of minutes.)", self::GETTEXT_REALM); ?>
+	<p>&nbsp;</p>
 	<div class="submit"><input type="submit" name="SimpleDownloadMonitor_Submit" value="<?php echo __("Update settings", self::GETTEXT_REALM) ?>" /></div>
 </form>
 </div><?php
@@ -466,6 +521,10 @@ if (!class_exists('SimpleDownloadMonitor'))
 			$options = array('download' => $download, 'from' => $from, 'order' => $order, 'flags' => $flags);
 			if ($this->IsAdmin())
 			{
+				if (isset($_POST['SimpleDownloadMonitor_Update']) && isset($_POST['SimpleDownloadMonitor_HideIds']) && is_array($_POST['SimpleDownloadMonitor_HideIds']) && isset($_POST['SimpleDownloadMonitor_ShowIds']) && is_array($_POST['SimpleDownloadMonitor_ShowIds']))
+				{
+					$this->HideDownloads($_POST['SimpleDownloadMonitor_ShowIds'], $_POST['SimpleDownloadMonitor_HideIds']);
+				}
 				if (isset($_POST['SimpleDownloadMonitor_Delete']) && isset($_POST['SimpleDownloadMonitor_DeleteIds']) && is_array($_POST['SimpleDownloadMonitor_DeleteIds'])) 
 				{
 					$this->DeleteDownloads($_POST['SimpleDownloadMonitor_DeleteIds']);
@@ -601,6 +660,28 @@ if (!class_exists('SimpleDownloadMonitor'))
 				return FALSE;
 		}
 
+		protected function HideDownloads($show_ids, $hide_ids = array())
+		{
+			global $wpdb;
+			$show_ids = implode(',', array_map('intval', $show_ids));
+			$hide_ids = implode(',', array_map('intval', $hide_ids));
+			$downloads = $this->table_downloads();
+			if ($show_ids)
+			{
+				$sql = "UPDATE ${downloads} SET hide_from_sidebar=0, last_date=last_date WHERE id IN (${show_ids})";
+				// The last_date is used to prevent automatic update to current_timestamp
+				$wpdb->query($sql);
+			}
+			if ($hide_ids)
+			{
+				$sql = "UPDATE ${downloads} SET hide_from_sidebar=1, last_date=last_date WHERE id IN (${hide_ids})";
+				// The last_date is used to prevent automatic update to current_timestamp
+				$wpdb->query($sql);
+			}
+			//wp_redirect($_SERVER['REQUEST_URI']);
+			//die();
+		}
+
 		protected function DeleteDownloadDetails($ids = array())
 		{
 			global $wpdb;
@@ -691,7 +772,8 @@ if (!class_exists('SimpleDownloadMonitor'))
 		<col class="sdmon-filename" />
 		<col class="sdmon-count" align="right" width="64" />
 		<col class="sdmon-date" align="center" />
-		<col class="sdmon-tools" />
+		<col class="sdmon-hidden" />
+		<col class="sdmon-delete" />
 	</colgroup>
 	<thead>
 	<tr>
@@ -699,7 +781,8 @@ if (!class_exists('SimpleDownloadMonitor'))
 		<th><a href="<?php echo $this->GetUrlForList(array_merge($options, array('order' => self::ORDER_NAME ))); ?>"><?php echo __("Filename", self::GETTEXT_REALM); ?></a></th>
 		<th><a href="<?php echo $this->GetUrlForList(array_merge($options, array('order' => self::ORDER_COUNT))); ?>"><?php echo __("Download count", self::GETTEXT_REALM); ?></a></th>
 		<th><a href="<?php echo $this->GetUrlForList(array_merge($options, array('order' => self::ORDER_DATE ))); ?>"><?php echo __("Last date", self::GETTEXT_REALM); ?></a></th>
-		<th>&nbsp;</th>
+		<th><?php echo __('Hide from sidebar', self::GETTEXT_REALM); ?></th>
+		<th><?php echo __('Reset to zero', self::GETTEXT_REALM); ?></th>
 	</tr>
 	</thead>
 	<tbody><?php
@@ -707,21 +790,31 @@ if (!class_exists('SimpleDownloadMonitor'))
 			$where = $this->GetWhere($flags);
 			$orderby = $this->GetOrderBy($order);
 			$limit = $this->GetLimit($from);
-			$sql = "SELECT id, filename, download_count, last_date, file_exists FROM ${table_downloads} ${where} ${orderby} ${limit}";
+			$sql = "SELECT id, filename, download_count, last_date, file_exists, hide_from_sidebar FROM ${table_downloads} ${where} ${orderby} ${limit}";
 			$totalcount = $wpdb->get_var("SELECT COUNT(*) FROM ${table_downloads} ${where}");
 			$results = $wpdb->get_results($sql, ARRAY_N);
 			$rownum = intval($options['from']);
 			if (is_array($results)) {
 				foreach ($results as $row) {
 					$rownum++;
-					list($download, $filename, $count, $date, $exists) = $row;
+					list($download, $filename, $count, $date, $exists, $hidden) = $row;
 					?>
 	<tr<?php if (!$exists) echo ' class="not-exist"'; ?>>
 		<td><?php echo $rownum; ?>.</td>
 		<td><?php if ($detailed): ?><a href="<?php echo $this->GetUrlForList(array('download' => $download)); ?>"><?php endif; echo htmlspecialchars($filename); if ($detailed): ?></a><?php endif; ?></td>
 		<td><?php echo $count; ?></td>
 		<td><?php echo mysql2date('Y-m-d H:i:s', $date, TRUE); ?></td>
-		<td><?php if ($this->IsAdmin()): ?><input type="checkbox" name="SimpleDownloadMonitor_DeleteIds[]" value="<?php echo $download; ?>" /><label for="SimpleDownloadMonitor_DeleteIds[]"> <?php echo __('Reset this statistic', self::GETTEXT_REALM); ?></label><?php else: ?>&nbsp;<?php endif; ?></td>
+		<td><?php if ($this->IsAdmin()): ?>
+			<input type="checkbox" name="SimpleDownloadMonitor_HideIds[]" value="<?php echo $download; ?>" <?php if ($hidden) echo ' checked="checked"'; ?> />
+			<input type="hidden" name="SimpleDownloadMonitor_ShowIds[]" value="<?php echo $download; ?>" />
+			<label for="SimpleDownloadMonitor_HideIds[]" /> <?php echo __('Hidden', self::GETTEXT_REALM); ?></label>
+			<?php else: ?>&nbsp;<?php endif; ?>
+		</td>
+		<td><?php if ($this->IsAdmin()): ?>
+			<input type="checkbox" name="SimpleDownloadMonitor_DeleteIds[]" value="<?php echo $download; ?>" />
+			<label for="SimpleDownloadMonitor_DeleteIds[]"> <?php echo __('Reset', self::GETTEXT_REALM); ?></label>
+			<?php else: ?>&nbsp;<?php endif; ?>
+		</td>
 	</tr>
 	</tbody><?php
 				}
@@ -729,6 +822,7 @@ if (!class_exists('SimpleDownloadMonitor'))
 		?>
 </table>
 <?php if ($this->isAdmin()): ?>
+<div><input type="submit" name="SimpleDownloadMonitor_Update" value="<?php echo __('Update settings', self::GETTEXT_REALM); ?>" /></div>
 <div><input type="submit" name="SimpleDownloadMonitor_Delete" value="<?php echo __('Reset checked statistics', self::GETTEXT_REALM); ?>" /></div>
 <div><input type="submit" name="SimpleDownloadMonitor_DeleteAll" value="<?php echo __('Reset all statistics', self::GETTEXT_REALM); ?>" /> - <input type="checkbox" name="SimpleDownloadMonitor_DeleteAllReally" value="yes" /><label for="SimpleDownloadMonitor_DeleteAllReally"> <?php echo __('Yes, I am sure', self::GETTEXT_REALM); ?></label></div>
 </form>
@@ -839,13 +933,13 @@ if (!class_exists('SimpleDownloadMonitor'))
 		{
 			echo '<link type="text/css" rel="stylesheet" href="' . $this->plugin_url . '/css/sdmon.css" />'."\n";
 		}
-
+		
 	}
 }
 
 if (!isset($sdmon))
 	$sdmon = new SimpleDownloadMonitor();
-
+	
 if (!function_exists('SimpleDownloadMonitor_BuildAdminMenu'))
 {
 	function SimpleDownloadMonitor_BuildAdminMenu()
@@ -863,3 +957,89 @@ if (!function_exists('SimpleDownloadMonitor_BuildAdminMenu'))
 		}
 	}
 }
+
+if (!class_exists('SimpleDownloadMonitor_Widget'))
+{
+	class SimpleDownloadMonitor_Widget extends WP_Widget 
+	{
+		function SimpleDownloadMonitor_Widget()
+		{
+			$widget_options = array(
+				'classname' => 'sdmon',
+				'description' => __('Allows you to display the most popular downloads in the sidebar.', SimpleDownloadMonitor::GETTEXT_REALM)
+			);
+			$control_options = array(
+				//'width' => 250,
+				//'height' => 0,
+				'id_base' => 'sdmon-widget'
+			);
+			$this->WP_Widget('sdmon-widget', 'Simple Download Monitor', $widget_options, $control_options);
+		}
+	
+		function widget($arguments, $instance)
+		{
+			global $wpdb;
+			$title = apply_filters('widget_title', $instance['title']);
+			$count = intval(isset($instance['count']) ? intval($instance['count']) : 0);
+			if ($count <= 0) $count = 10;
+			$like = isset($instance['like']) ? $instance['like'] : '';
+			echo $arguments['before_widget'];
+			if ($title) echo $arguments['before_title'] . $title . $arguments['after_title'];
+			$downloads = SimpleDownloadMonitor::table_downloads();
+			$liketest = $like ? ' AND filename LIKE "%s"' : '';
+			$sql = "SELECT id, filename, download_count FROM ${downloads} WHERE file_exists<>0 AND COALESCE(hide_from_sidebar,0)=0 ${liketest} ORDER BY download_count DESC LIMIT ${count}";
+			$results = $wpdb->get_results($wpdb->prepare($sql, $like), ARRAY_N);
+			echo "<ul>\n";
+			foreach ($results as $row)
+			{
+				list($id, $filename, $downloadcount) = $row;
+?><li><a href="/<?php echo esc_attr($filename); ?>"><?php echo htmlspecialchars(basename($filename)); ?></a> <strong><?php echo $downloadcount; ?></strong></li><?php
+			}
+			echo "</ul>\n";
+			echo $arguments['after_widget'];
+		}
+		
+		function update($new_instance, $old_instance)
+		{
+			$instance = $old_instance;
+			$instance['title'] = strip_tags($new_instance['title']);
+			$instance['count'] = intval($new_instance['count']);
+			$instance['like'] = $new_instance['like'];
+			return $instance;
+		}
+		
+		function form($instance)
+		{
+			$defaults = array(
+				'title' => __('Popular files', SimpleDownloadMonitor::GETTEXT_REALM),
+				'count' => '10',
+				'like' => ''
+			);
+			$instance = wp_parse_args((array) $instance, $defaults);
+?><p>
+  <label for="<?php echo $this->get_field_id('title'); ?>"><?php echo __('Title:', SimpleDownloadMonitor::GETTEXT_REALM); ?></label>
+  <input id="<?php echo $this->get_field_id('title'); ?>" name="<?php echo $this->get_field_name('title'); ?>" value="<?php echo esc_attr($instance['title']); ?>" type="text" style="width: 100%;" />
+</p>
+<p>
+  <label for="<?php echo $this->get_field_id('count'); ?>"><?php echo __('Number of files to show:', SimpleDownloadMonitor::GETTEXT_REALM); ?></label>
+  <input id="<?php echo $this->get_field_id('count'); ?>" name="<?php echo $this->get_field_name('count'); ?>" value="<?php echo esc_attr($instance['count']); ?>" type="text" />
+</p><p>
+  <label for="<?php echo $this->get_field_id('like'); ?>"><?php echo __('Only show filenames which match this LIKE condition:', SimpleDownloadMonitor::GETTEXT_REALM); ?></label>
+  <input id="<?php echo $this->get_field_id('like'); ?>" name="<?php echo $this->get_field_name('like'); ?>" value="<?php echo esc_attr($instance['like']); ?>" type="text" style="width: 100%;" />
+  <br /><?php echo __("Empty string matches all filenames and is useful for most usage scenarios. You would only use a non-empty value if you wanted to create multiple SDMon widgets, each showing a different list of files: only filenames which match the given string in a LIKE condition of a SQL query will be shown. The most common values would be something like <code>files/documents/%</code> (meaning \"The filename must begin with <code>files/documents/</code>\") or <code>%.mp3</code> (meaning \"The filename must end with <code>.mp3</code>\") - the percentage symbol <code>%</code> means \"anything\", the underscore symbol <code>_</code> means \"Any one character\".", SimpleDownloadMonitor::GETTEXT_REALM); ?>
+</p><?php
+		}
+		
+	}
+}
+
+if (!function_exists('SimpleDownloadMonitorWidget_Init'))
+{
+	function SimpleDownloadMonitorWidget_Init()
+	{
+		register_widget('SimpleDownloadMonitor_Widget');
+	}
+	
+}
+
+add_action('widgets_init', 'SimpleDownloadMonitorWidget_Init');
