@@ -4,7 +4,7 @@
 Plugin Name: Simple Download Monitor
 Plugin URI: http://www.pepak.net/wordpress/simple-download-monitor-plugin
 Description: Count the number of downloads without having to maintain a comprehensive download page.
-Version: 0.20
+Version: 0.21
 Author: Pepak
 Author URI: http://www.pepak.net
 */
@@ -31,7 +31,7 @@ if (!class_exists('SimpleDownloadMonitor'))
 	class SimpleDownloadMonitor
 	{
 
-		const VERSION = '0.20';
+		const VERSION = '0.21';
 		const PREFIX = 'sdmon_';
 		const PREG_DELIMITER = '`';
 		const GET_PARAM = 'sdmon';
@@ -53,6 +53,8 @@ if (!class_exists('SimpleDownloadMonitor'))
 			register_activation_hook(__FILE__, array('SimpleDownloadMonitor', 'Install'));
 			add_action('init', array(&$this, 'ActionInit'));
 			add_action('admin_menu', 'SimpleDownloadMonitor_BuildAdminMenu');
+			if (self::VERSION != get_option(self::PREFIX . 'version'))
+				self::Install();
 		}
 
 		public static function Install()
