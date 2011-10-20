@@ -241,7 +241,7 @@ http://www.pepak.net/wordpress/simple-download-monitor-plugin/#comment-4729
 
 = 0.10 =
 
-* Belorussian translation by FatCow ( http://www.fatcow.com )
+* Belorussian translation by FatCow.
 
 * PHP 4 version is also available (see the FAQ).
 
