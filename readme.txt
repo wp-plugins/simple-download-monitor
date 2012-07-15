@@ -3,8 +3,8 @@ Contributors: Pepak
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=paypal.com@pepak.net&currency_code=USD
 Tags: files, counter, count, tracking, download monitor, monitor, downloads, download
 Requires at least: 2.8.0
-Tested up to: 3.0.3
-Stable tag: 0.21
+Tested up to: 3.4.1
+Stable tag: 0.22
 
 Count the number of downloads without having to maintain a comprehensive download page.
 
@@ -45,7 +45,7 @@ username of people who download my files.
    This is easy enough to do: Open your '.htaccess' file and locate line
    `RewriteCond %{REQUEST_FILENAME} !-f`
    Add this line directly above it:
-   `RewriteRule ^(files/.*) /index.php?sdmon=$1 [L]`
+   `RewriteRule ^(files/.*) /index.php?sdmon=$1 [L,QSA]`
    (replace 'files/' with your download directory).
 1. (Optional step) If you want to see country flags in the download stats page, download,
    install, activate and set up my Country-To-IP Plugin ( http://wordpress.org/extend/plugins/ip-to-country/ ).
@@ -118,10 +118,37 @@ http://www.pepak.net/wordpress/simple-download-monitor-plugin/#comment-4729
 
 == Changelog ==
 
+= 0.22 =
+
+* Matheus Bratfisch (http://matbra.com) suggested and implemented an intermediate
+  download page. You can use this page to tell the user that his download is 
+  about to begin, instead of just sending the file directly. To do so, please
+  enter the plugin's configuration, check the "Use the intermediate download page."
+  checkbox and provide a file path (not a web path!) to the page's source code.
+  An example page `download-example.php` is provided in the plugin's directory.
+
+  Note that if you are already used of Simple Download Monitor and want to use
+  this functionality, you'll need to modify your `.htaccess` file (new users
+  are not affected as they must have used the configuration listed in the
+  documentation and that is the required one already): Change the line
+   `RewriteRule ^(files/.*) /index.php?sdmon=$1 [L]`
+  to read
+   `RewriteRule ^(files/.*) /index.php?sdmon=$1 [L,QSA]`
+  (that is, add `,QSA` to the SDMon's rewrite rule's options). Then you can 
+  open the SDMon configuration and in the "Use an intermediate Download page"
+  section enable the intermediate download page. A demo page is provided, but
+  you can of course use a different one.
+
+  I'd like to thank Matheus Bratfisch (http://matbra.com) very much for first
+  providing this functionality and then being patient and insistent enough for
+  me to incorporate it.
+
 = 0.21 =
 
 * A fix for the "feature" of WordPress 3.1 which requires manual deactivation
   and reactivation of the plugin after upgrade (see http://core.trac.wordpress.org/ticket/14915).
+
+* Removed the old PHP4 version. It hasn't been updated a long time anyway.
 
 = 0.20 =
 

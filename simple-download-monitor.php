@@ -4,9 +4,9 @@
 Plugin Name: Simple Download Monitor
 Plugin URI: http://www.pepak.net/wordpress/simple-download-monitor-plugin
 Description: Count the number of downloads without having to maintain a comprehensive download page.
-Version: 0.21
-Author: Pepak
-Author URI: http://www.pepak.net
+Version: 0.22
+Author: Pepak | contributors: matheusbrat (http://matbra.com)
+Author URI: http://www.pepak.net 
 */
 
 /*  Copyright 2009, 2010  Pepak (email: wordpress@pepak.net)
@@ -31,7 +31,7 @@ if (!class_exists('SimpleDownloadMonitor'))
 	class SimpleDownloadMonitor
 	{
 
-		const VERSION = '0.21';
+		const VERSION = '0.22';
 		const PREFIX = 'sdmon_';
 		const PREG_DELIMITER = '`';
 		const GET_PARAM = 'sdmon';
@@ -103,6 +103,8 @@ if (!class_exists('SimpleDownloadMonitor'))
 			add_option(self::PREFIX . 'max_downloads_per_ip_and_day', '0');
 			add_option(self::PREFIX . 'max_downloads_per_ip_and_day_registered', '0');
 			add_option(self::PREFIX . 'error_download_limit', '');
+			add_option(self::PREFIX . 'download_page', plugin_dir_path(__FILE__) . '/download-example.php');
+			add_option(self::PREFIX . 'show_download_page', '0');
 		}
 
 		public function table_downloads()
@@ -126,6 +128,7 @@ if (!class_exists('SimpleDownloadMonitor'))
 		// http://www.coneural.org/florian/papers/04_byteserving.php
 
 		function set_range($range, $filesize, &$first, &$last){
+
 		  /*
 		  Sets the first and last bytes of a range, given a range expressed as a string 
 		  and the size of the file.
@@ -385,7 +388,16 @@ if (!class_exists('SimpleDownloadMonitor'))
 			return TRUE;
 		}
 
+		public function Download_Page($filename) {
+			$page = get_option(self::PREFIX . 'download_page');
+			if ($page && file_exists($page))
+				include($page);
+			else
+				$this->Download($filename);
+		}
+		
 		public function ActionInit() {
+
 			// Function is called in 'init' hook. It checks for download and if so, stops normal WordPress processing
 			// and replaces it with its monitoring functions.
 			$currentLocale = get_locale();
@@ -398,10 +410,32 @@ if (!class_exists('SimpleDownloadMonitor'))
 			//load_plugin_textdomain(self::GETTEXT_REALM, $this->plugin_dir . '/lang');
 			if (isset($_GET[self::GET_PARAM]) && ($filename = $_GET[self::GET_PARAM]))
 			{
-				if ($this->Download($filename))
-					die();
+				// If it is setup so, show the download page
+				$usedownloadpage = intval(get_option(self::PREFIX . 'show_download_page'));
+				// Skip the download page if 'download' parameter is used
+				if ($usedownloadpage && isset($_GET['download']) && $_GET['download'])
+					$usedownloadpage = FALSE;
+				if ($usedownloadpage && isset($_SERVER['HTTP_REFERER'])) {
+					$referer = $_SERVER['HTTP_REFERER'];
+					$site_url = get_option('site_url');
+					if ($site_url)
+						$found = strpos($referer, $site_url . strval($_POST[self::PREFIX . 'directories']) . $filename) === 0;
+					else
+						$found = strpos($referer, strval($_POST[self::PREFIX . 'directories']) . $filename) !== FALSE;
+					if ($found)
+						$usedownloadpage = FALSE;
+                                }
+				// Also skip the download page if the file is intended for inline use
+				if ($usedownloadpage && ($inlineregexp = get_option(self::PREFIX . 'inline')) && preg_match(self::PREG_DELIMITER . $inlineregexp . self::PREG_DELIMITER, $filename))
+					$usedownloadpage = FALSE;
+				// Go to it
+				if ($usedownloadpage)
+					$this->Download_Page($filename);
 				else
-					wp_redirect(get_option('site_url'));
+					if ($this->Download($filename))
+						die();
+					else
+						wp_redirect(get_option('site_url'));
 			}
 		}
 
@@ -424,6 +458,8 @@ if (!class_exists('SimpleDownloadMonitor'))
 				$downloads_per_day = intval($_POST[self::PREFIX . 'max_downloads_per_ip_and_day']);
 				$downloads_per_day_registered = intval($_POST[self::PREFIX . 'max_downloads_per_ip_and_day_registered']);
 				$error_download_limit = strval($_POST[self::PREFIX . 'error_download_limit']);
+				$show_download_page = intval($_POST[self::PREFIX . 'show_download_page']);
+				$download_page = strval($_POST[self::PREFIX . 'download_page']);
 				// Remove slashes if necessary
 				if (get_magic_quotes_gpc())
 				{
@@ -449,6 +485,10 @@ if (!class_exists('SimpleDownloadMonitor'))
 				update_option(self::PREFIX . 'max_downloads_per_ip_and_day', $downloads_per_day);
 				update_option(self::PREFIX . 'max_downloads_per_ip_and_day_registered', $downloads_per_day_registered);
 				update_option(self::PREFIX . 'error_download_limit', $error_download_limit);
+				if (file_exists($download_page)) 
+					update_option(self::PREFIX . 'download_page', $download_page);
+				update_option(self::PREFIX . 'show_download_page', $show_download_page);
+
 			}
 			// Load options from the database
 			$directories = get_option(self::PREFIX . 'directories');
@@ -463,6 +503,8 @@ if (!class_exists('SimpleDownloadMonitor'))
 			$downloads_per_day = get_option(self::PREFIX . 'max_downloads_per_ip_and_day');
 			$downloads_per_day_registered = get_option(self::PREFIX . 'max_downloads_per_ip_and_day_registered');
 			$error_download_limit = get_option(self::PREFIX . 'error_download_limit');
+			$download_page = get_option(self::PREFIX . 'download_page');
+			$show_download_page = get_option(self::PREFIX . 'show_download_page');
 			// Build the form
 			?>
 <div class="wrap">
@@ -507,6 +549,12 @@ if (!class_exists('SimpleDownloadMonitor'))
 	<p><?php echo __("Error message:", self::GETTEXT_REALM); ?></p>
 	<p><textarea name="<?php echo self::PREFIX; ?>error_download_limit" rows="4" cols="64"><?php echo htmlspecialchars($error_download_limit); ?></textarea></p>
 	<p><?php echo __("(The first <code>%d</code> will be replaced by number of hours, the second one by number of minutes.)", self::GETTEXT_REALM); ?>
+	<h3><?php echo __("Use an intermediate Download page", self::GETTEXT_REALM); ?></h3>
+	<p><?php echo __("Before sending the actual requested file, display an intermediate download page which tells the user that the download is about to start.", self::GETTEXT_REALM); ?></p>
+	<p><label for="<?php echo self::PREFIX; ?>show_download_page"><input type="checkbox" name="<?php echo self::PREFIX; ?>show_download_page" value="1" <?php if ($show_download_page) echo 'checked="checked" '; ?>/> <?php echo __('Use the intermediate download page.', self::GETTEXT_REALM); ?></label></p>
+	<p><?php echo __("Path to your download page:", self::GETTEXT_REALM); ?><input type="text" name="<?php echo self::PREFIX; ?>download_page" value="<?php echo esc_attr($download_page); ?>" size="80" /></p>
+	<p><?php printf(__("You can use <strong>%s</strong> to use a demo page provided with the plugin.", self::GETTEXT_REALM), htmlspecialchars($this->plugin_dir . '/download-example.php')); ?></p>
+	<p><?php echo __("This functionality was suggested and for the most part programmed by <a href=\"http://matbra.com\">Matheus Bratfisch</a>, I (Pepak) just cleaned it up and added it to the plugin's distribution.", self::GETTEXT_REALM); ?></p>
 	<p>&nbsp;</p>
 	<div class="submit"><input type="submit" name="SimpleDownloadMonitor_Submit" value="<?php echo __("Update settings", self::GETTEXT_REALM) ?>" /></div>
 </form>
