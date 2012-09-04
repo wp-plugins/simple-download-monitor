@@ -4,7 +4,7 @@
 Plugin Name: Simple Download Monitor
 Plugin URI: http://www.pepak.net/wordpress/simple-download-monitor-plugin
 Description: Count the number of downloads without having to maintain a comprehensive download page.
-Version: 0.22
+Version: 0.23
 Author: Pepak | contributors: matheusbrat (http://matbra.com)
 Author URI: http://www.pepak.net 
 */
@@ -105,6 +105,8 @@ if (!class_exists('SimpleDownloadMonitor'))
 			add_option(self::PREFIX . 'error_download_limit', '');
 			add_option(self::PREFIX . 'download_page', plugin_dir_path(__FILE__) . '/download-example.php');
 			add_option(self::PREFIX . 'show_download_page', '0');
+			add_option(self::PREFIX . 'detailed_errors', '0');
+			add_option(self::PREFIX . 'basepath_modifier', '');
 		}
 
 		public function table_downloads()
@@ -301,14 +303,17 @@ if (!class_exists('SimpleDownloadMonitor'))
 			$downloads = $this->table_downloads();
 			$ip_addr = $_SERVER['REMOTE_ADDR'];
 			// Normalize the filename
-			$fullfilename = realpath(ABSPATH . '/' . $filename);
-			$relfilename = substr($fullfilename, strlen(ABSPATH));
+			$basepath = realpath(ABSPATH . get_option(self::PREFIX . 'basepath_modifier')) . '/';
+			$fullfilename = realpath($basepath . $filename);
+			$relfilename = substr($fullfilename, strlen($basepath));
 			$relfilename = strtr($relfilename, '\\', '/');
 			$exists = (file_exists($fullfilename) AND !is_dir($fullfilename)) ? 1 : 0;
 			// Make sure it is a valid request
 			$dirregexp = self::PREG_DELIMITER . '^' . get_option(self::PREFIX . 'directories') . self::PREG_DELIMITER;
 			$extregexp = self::PREG_DELIMITER . '\\.' . get_option(self::PREFIX . 'extensions') . '$' . self::PREG_DELIMITER;
-			$valid = (preg_match($dirregexp, $relfilename) AND preg_match($extregexp, $relfilename)) ? 1 : 0;
+			$valid_dir = preg_match($dirregexp, $relfilename);
+			$valid_ext = preg_match($extregexp, $relfilename);
+			$valid = ($valid_dir AND $valid_ext) ? 1 : 0;
 			// Get user information and decide if this user should be ignored
 			get_currentuserinfo();
 			$userid = $user_ID ? $user_ID : null;
@@ -365,8 +370,18 @@ if (!class_exists('SimpleDownloadMonitor'))
 			}
 			// If the file exists and is valid, download it
 			// Make sure the file is available for download
-			if (!$exists OR !$valid)
+			if (!$exists)
 				$this->ErrorMessage(404, sprintf(__("Requested file <strong>%s</strong> not found."), htmlspecialchars($filename)), 'Not found');
+			if (intval(get_option(self::PREFIX . 'detailed_errors')))
+			{
+				if (!$valid_dir)
+					$this->ErrorMessage(404, sprintf(__("Requested file <strong>%s</strong> has an invalid path."), htmlspecialchars($filename)), 'Not valid');
+				if (!$valid_ext)
+					$this->ErrorMessage(404, sprintf(__("Requested file <strong>%s</strong> has an invalid extension."), htmlspecialchars($filename)), 'Not valid');
+			}
+			if (!$valid)
+				$this->ErrorMessage(404, sprintf(__("Requested file <strong>%s</strong> not found."), htmlspecialchars($filename)), 'Not found');
+
 			// Generate proper headers
 			$mimetype = '';
 			if (function_exists('finfo_open') AND defined('FILEINFO_MIME_TYPE'))
@@ -460,6 +475,8 @@ if (!class_exists('SimpleDownloadMonitor'))
 				$error_download_limit = strval($_POST[self::PREFIX . 'error_download_limit']);
 				$show_download_page = intval($_POST[self::PREFIX . 'show_download_page']);
 				$download_page = strval($_POST[self::PREFIX . 'download_page']);
+				$basepath_modifier = strval($_POST[self::PREFIX . 'basepath_modifier']);
+				$detailed_errors = intval($_POST[self::PREFIX . 'detailed_errors']);
 				// Remove slashes if necessary
 				if (get_magic_quotes_gpc())
 				{
@@ -488,6 +505,8 @@ if (!class_exists('SimpleDownloadMonitor'))
 				if (file_exists($download_page)) 
 					update_option(self::PREFIX . 'download_page', $download_page);
 				update_option(self::PREFIX . 'show_download_page', $show_download_page);
+				update_option(self::PREFIX . 'basepath_modifier', $basepath_modifier);
+				update_option(self::PREFIX . 'detailed_errors', $detailed_errors);
 
 			}
 			// Load options from the database
@@ -504,7 +523,9 @@ if (!class_exists('SimpleDownloadMonitor'))
 			$downloads_per_day_registered = get_option(self::PREFIX . 'max_downloads_per_ip_and_day_registered');
 			$error_download_limit = get_option(self::PREFIX . 'error_download_limit');
 			$download_page = get_option(self::PREFIX . 'download_page');
-			$show_download_page = get_option(self::PREFIX . 'show_download_page');
+			$show_download_page = intval(get_option(self::PREFIX . 'show_download_page'));
+			$basepath_modifier = get_option(self::PREFIX . 'basepath_modifier');
+			$detailed_errors = intval(get_option(self::PREFIX . 'detailed_errors'));
 			// Build the form
 			?>
 <div class="wrap">
@@ -521,23 +542,23 @@ if (!class_exists('SimpleDownloadMonitor'))
 	<h3><?php echo __('Allowed directories', self::GETTEXT_REALM); ?></h3>
 	<p><?php echo __("Only requested files whose full names (relative to document root) start with this regular expression will be processed. It is strongly recommended to place all downloadable files (and ONLY downloadable files) into a designated directory and then placing that directory's name followed by a slash here. It is possible to use the power of PREG to allow multiple directories, but make sure there are ONLY files which you are comfortable with malicious users downloading. Do not EVER allow directories which contain PHP files here! That could lead to disclosure of sensitive data, including username and password used to connect to WordPress database.", self::GETTEXT_REALM); ?></p>
 	<p><?php echo __("Default value is <code>files/</code>, which only allows download from /files directory (the leading <code>/</code> is implicit).", self::GETTEXT_REALM); ?></p>
-	<p><input type="text" name="<?php echo self::PREFIX; ?>directories" value="<?php echo esc_attr($directories); ?>" /></p>
+	<p><input type="text" name="<?php echo self::PREFIX; ?>directories" value="<?php echo esc_attr($directories); ?>" size="80" /></p>
 	<h3><?php echo __('Allowed extensions', self::GETTEXT_REALM); ?></h3>
 	<p><?php echo __('Only files with extensions matching this regular expressions will be processed. This is another important security value. Make sure you only add extensions which are safe for malicious users to have, e.g. archives and possibly images. Do NOT use any expression that could allow a user to download PHP files, even if you think it safe given the Allowed Directories option above.', self::GETTEXT_REALM); ?></p>
 	<p><?php echo __("Default value is <code>zip|rar|7z</code> which only allows download of files ending with <code>.zip</code>, <code>.rar</code> and <code>.7z</code> (the leading <code>.</code> is implicit).", self::GETTEXT_REALM); ?></p>
-	<p><input type="text" name="<?php echo self::PREFIX; ?>extensions" value="<?php echo esc_attr($extensions); ?>" /></p>
+	<p><input type="text" name="<?php echo self::PREFIX; ?>extensions" value="<?php echo esc_attr($extensions); ?>" size="80" /></p>
 	<h3><?php echo __('Inline files', self::GETTEXT_REALM); ?></h3>
 	<p><?php echo __('Files whose names match this regular expression will be displayed inline (within a HTML page) rather than downloaded.', self::GETTEXT_REALM); ?></p>
 	<p><?php echo __("By default, this value is empty - no files will appear inline, all will be downloaded. You may want to place something like <code>\.(jpe?g|gif|png|swf)$</code> here to make images and Flash videos appear inline.", self::GETTEXT_REALM); ?></p>
 	<p><?php echo __('Note: Unlike the options above, nothing is implied in this regular expression. You <em>must</em> use an explicit <code>\.</code> to denote "start of extension", you <em>must</em> use an explicit <code>$</code> to mark "end of filename", etc.', self::GETTEXT_REALM); ?></p>
 	<p><?php echo __('Also note that this plugin uses PCRE-compatible regular expressions, NOT the better-known POSIX-compatible regular expressions. As a result, a valid regular expression must be at least three characters long - separator twice, and at least one character for a meaningful r.e.', self::GETTEXT_REALM); ?></p>
-	<p><input type="text" name="<?php echo self::PREFIX; ?>inline" value="<?php echo esc_attr($inline); ?>" /></p>
+	<p><input type="text" name="<?php echo self::PREFIX; ?>inline" value="<?php echo esc_attr($inline); ?>" size="80" /></p>
 	<h3><?php echo __("Store detailed logs?", self::GETTEXT_REALM); ?></h3>
 	<p><?php echo __("If detailed logs are allowed, various information (including exact time of download, user's IP address, referrer etc.) is stored. This can fill your database quickly if you have only a little space or a lot of popular downloads. Otherwise just the total numbers of downloads are stored, consuming significantly less space.", self::GETTEXT_REALM); ?></p>
 	<p><label for="<?php echo self::PREFIX; ?>detailed"><input type="checkbox" name="<?php echo self::PREFIX; ?>detailed" value="1" <?php if ($detailed) echo 'checked="checked" '; ?>/> <?php echo __('Use detailed statistics.', self::GETTEXT_REALM); ?></label></p>
 	<h3><?php echo __("Ignored users", self::GETTEXT_REALM); ?></h3>
 	<p><?php echo __("List of users whose downloads are not monitored. Separate multiple users with pipe character <code>|</code>. It is useful to prevent administrator damaging the statistics by testing that downloads work.", self::GETTEXT_REALM); ?></p>
-	<p><input type="text" name="<?php echo self::PREFIX; ?>ignored_users" value="<?php echo esc_attr($ignored_users); ?>" /></p>
+	<p><input type="text" name="<?php echo self::PREFIX; ?>ignored_users" value="<?php echo esc_attr($ignored_users); ?>" size="80" /></p>
 	<h3><?php echo __("Ignore quick re-downloads", self::GETTEXT_REALM); ?></h3>
 	<p><?php echo __("If one IP address requests the same download several times within a given time interval, only the first time will be recorded. If a zero or a negative value is entered, all downloads will get recorded regardless of how quickly they occur after each other.", self::GETTEXT_REALM); ?></p>
 	<p><input type="text" name="<?php echo self::PREFIX; ?>group_within" value="<?php echo esc_attr($group_within); ?>" /> <?php echo __('seconds', self::GETTEXT_REALM); ?></p>
@@ -549,12 +570,19 @@ if (!class_exists('SimpleDownloadMonitor'))
 	<p><?php echo __("Error message:", self::GETTEXT_REALM); ?></p>
 	<p><textarea name="<?php echo self::PREFIX; ?>error_download_limit" rows="4" cols="64"><?php echo htmlspecialchars($error_download_limit); ?></textarea></p>
 	<p><?php echo __("(The first <code>%d</code> will be replaced by number of hours, the second one by number of minutes.)", self::GETTEXT_REALM); ?>
+	<h3><?php echo __("Use more detailed error messages", self::GETTEXT_REALM); ?></h3>
+	<p><?php echo __("In case a link doesn't pass the security checks, display a more detailed error message than just \"file not found\". This is useful for the initial setting up, but can be used to exploit the security of your site (e.g. discovering whether a file exists). I recommend unchecking this option as soon as you get SDMon working.", self::GETTEXT_REALM); ?></p>
+	<p><label for="<?php echo self::PREFIX; ?>detailed_errors"><input type="checkbox" name="<?php echo self::PREFIX; ?>detailed_errors" value="1" <?php if ($detailed_errors) echo 'checked="checked" '; ?>/> <?php echo __('Use more detailed error messages.', self::GETTEXT_REALM); ?></label></p>
 	<h3><?php echo __("Use an intermediate Download page", self::GETTEXT_REALM); ?></h3>
 	<p><?php echo __("Before sending the actual requested file, display an intermediate download page which tells the user that the download is about to start.", self::GETTEXT_REALM); ?></p>
 	<p><label for="<?php echo self::PREFIX; ?>show_download_page"><input type="checkbox" name="<?php echo self::PREFIX; ?>show_download_page" value="1" <?php if ($show_download_page) echo 'checked="checked" '; ?>/> <?php echo __('Use the intermediate download page.', self::GETTEXT_REALM); ?></label></p>
 	<p><?php echo __("Path to your download page:", self::GETTEXT_REALM); ?><input type="text" name="<?php echo self::PREFIX; ?>download_page" value="<?php echo esc_attr($download_page); ?>" size="80" /></p>
 	<p><?php printf(__("You can use <strong>%s</strong> to use a demo page provided with the plugin.", self::GETTEXT_REALM), htmlspecialchars($this->plugin_dir . '/download-example.php')); ?></p>
 	<p><?php echo __("This functionality was suggested and for the most part programmed by <a href=\"http://matbra.com\">Matheus Bratfisch</a>, I (Pepak) just cleaned it up and added it to the plugin's distribution.", self::GETTEXT_REALM); ?></p>
+	<h3><?php echo __('Basepath modifier', self::GETTEXT_REALM); ?></h3>
+	<p><strong><?php echo __("Note: Keep this option empty unless you know what you are doing. DO NOT ASK! The use of this option is not supported.", self::GETTEXT_REALM); ?></strong></p>
+	<p><?php echo __("You can provide a modifier which, applied to WordPress' ABSPATH, gets you to the base directory from which relative links to files start. This way you can store files outside of the WordPress directory tree, by using something like <code>../private_dir/</code> (the ending slash is required). Note that this option is incompatible with some functionality and is not supported - if you want to use it, search the plugin's source code for <code>basepath_modifier</code>, understand how it is used and then act accordingly.", self::GETTEXT_REALM); ?></p>
+	<p><input type="text" name="<?php echo self::PREFIX; ?>basepath_modifier" value="<?php echo esc_attr($basepath_modifier); ?>" size="80" /></p>
 	<p>&nbsp;</p>
 	<div class="submit"><input type="submit" name="SimpleDownloadMonitor_Submit" value="<?php echo __("Update settings", self::GETTEXT_REALM) ?>" /></div>
 </form>

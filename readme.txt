@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=paypa
 Tags: files, counter, count, tracking, download monitor, monitor, downloads, download
 Requires at least: 2.8.0
 Tested up to: 3.4.1
-Stable tag: 0.22
+Stable tag: 0.23
 
 Count the number of downloads without having to maintain a comprehensive download page.
 
@@ -117,6 +117,17 @@ http://www.pepak.net/wordpress/simple-download-monitor-plugin/#comment-4729
 3. Detailed statistics for a file
 
 == Changelog ==
+
+= 0.23 =
+
+* Support for more detailed error messages which may help with setting up the 
+  plugin. The function is turned off by default, because it can be exploited
+  to determine the existence or nonexistence of a given file.
+
+* There is a special option that allows you to setup your "files" directory
+  outside of the WordPress tree. This is not recommended nor supported, if you
+  want to use it, you are on your own - search the source code for 
+  `basepath_modifier`, understand it and then decide whether you want to use it.
 
 = 0.22 =
 
