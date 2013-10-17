@@ -18,7 +18,7 @@ function sdmon_redirect() {
 <div align="center">
 <br /><br />
 <p>Your download will begin in 5 seconds!</p>
-<p>If it does not, <a href="/<? echo $filename; ?>?download=true" rel="nofollow">click here</a>.</p>
+<p>If it does not, <a href="/<?php echo $filename; ?>?download=true" rel="nofollow">click here</a>.</p>
 <br /><br />
 </div>	
 	

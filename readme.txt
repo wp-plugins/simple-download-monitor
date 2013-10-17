@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=paypa
 Tags: files, counter, count, tracking, download monitor, monitor, downloads, download
 Requires at least: 2.8.0
 Tested up to: 3.4.1
-Stable tag: 0.23
+Stable tag: 0.24
 
 Count the number of downloads without having to maintain a comprehensive download page.
 
@@ -117,6 +117,18 @@ http://www.pepak.net/wordpress/simple-download-monitor-plugin/#comment-4729
 3. Detailed statistics for a file
 
 == Changelog ==
+
+= 0.24 =
+
+* Updated the examples (`download-example.php`, `download-example-js.php`)
+  to be compatible with PHP 5.4.
+
+* Due to my (Pepak's) lack of time to work on this project anymore, I will
+  be giving it to mra13 of "All In One WP Security & Firewall" who will be
+  developing it further. This is the last version created by me. It has been
+  good while it lasted, but now I have moved on and I don't want the plugin
+  to die.
+
 
 = 0.23 =
 

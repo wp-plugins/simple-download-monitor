@@ -9,7 +9,7 @@
 
 <div align="center">
 <br /><br />
-Your download will begin in 5 seconds! <br /> If it does not, <a href="/<? echo $filename; ?>?download=true" rel="nofollow">click here</a>.
+Your download will begin in 5 seconds! <br /> If it does not, <a href="/<?php echo $filename; ?>?download=true" rel="nofollow">click here</a>.
 <br /><br />
 </div>	
 
@@ -26,7 +26,7 @@ function updateIframe() {
 	if(exec == true) { 
 		exec = false;
 		var ifrm = document.getElementById("frame1");
-		ifrm.src = "/<? echo $filename; ?>?download=true";
+		ifrm.src = "/<?php echo $filename; ?>?download=true";
 	}
 }
 </script>
