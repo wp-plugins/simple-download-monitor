@@ -67,7 +67,7 @@ You can check the download stats from the "Downloads->Logs" menu. It shows the n
 
 1. Go to the Add New plugins screen in your WordPress admin area
 1. Click the upload tab
-1. Browse for the plugin file (simple_download_monitor.zip)
+1. Browse for the plugin file (simple-download-monitor.zip)
 1. Click Install Now and then activate the plugin
 
 == Frequently Asked Questions ==
@@ -82,10 +82,17 @@ For screenshots please visit the plugin page
 
 == Changelog ==
 
+= 2.1 = 
+* Minor bug fixes with the stylesheet file URL.
+
 = 2.0 =
 * Complete new architecture for the download monitor plugin
 * You can download the old version with old architecture here:
 http://wordpress.org/plugins/simple-download-monitor/developers/
+
+= 0.24 and before =
+* The old architecture changelog can be found inside the zip file here:
+http://downloads.wordpress.org/plugin/simple-download-monitor.0.24.zip
 
 == Upgrade Notice ==
 

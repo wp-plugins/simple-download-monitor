@@ -3,14 +3,18 @@
  * Plugin Name: Simple Download Monitor
  * Plugin URI: http://www.tipsandtricks-hq.com/development-center
  * Description: Easily manage downloadable files and monitor downloads of your digital files from your WordPress site.
- * Version: 2.0
+ * Version: 2.1
  * Author: Tips and Tricks HQ, Ruhul Amin, Josh
  * Author URI: http://www.tipsandtricks-hq.com/development-center
  * License: GPL2
  */
 
+define('WP_SIMPLE_DL_MONITOR_DIR_NAME', dirname(plugin_basename(__FILE__)));
+define('WP_SIMPLE_DL_MONITOR_URL', plugins_url('',__FILE__));
+define('WP_SIMPLE_DL_MONITOR_PATH',plugin_dir_path( __FILE__ ));
+
 global $sdm_db_version;
-$sdm_db_version = '1.0';
+$sdm_db_version = '2.1';
 
 register_activation_hook(__FILE__, 'sdm_install_db_table' );
 function sdm_install_db_table() {
@@ -98,7 +102,7 @@ class simpleDownloadManager {
 			// These scripts are needed for the media upload thickbox
 			wp_enqueue_script('media-upload');
 			wp_enqueue_script('thickbox');
-			wp_register_script('sdm-upload', WP_PLUGIN_URL.'/simple_download_monitor/js/sdm_admin_scripts.js', array('jquery','media-upload','thickbox'));
+			wp_register_script('sdm-upload', WP_SIMPLE_DL_MONITOR_URL.'/js/sdm_admin_scripts.js', array('jquery','media-upload','thickbox'));
 			wp_enqueue_script('sdm-upload');
 			
 			// Pass postID for thumbnail deletion
@@ -121,7 +125,7 @@ class simpleDownloadManager {
 	public function sdm_admin_styles() {
 		
 		wp_enqueue_style('thickbox');  // Needed for media upload thickbox
-		wp_enqueue_style('sdm_admin_styles', WP_PLUGIN_URL.'/simple_download_monitor/css/sdm_admin_styles.css');  // Needed for media upload thickbox
+		wp_enqueue_style('sdm_admin_styles', WP_SIMPLE_DL_MONITOR_URL.'/css/sdm_admin_styles.css');  // Needed for media upload thickbox
 	}
 	
 	public function sdm_register_post_type() {
@@ -812,7 +816,7 @@ function sdm_create_shortcode( $atts ) {
 */
 add_action( 'wp_enqueue_scripts', 'sdm_wp_scripts' );
 function sdm_wp_scripts() {	
-	wp_enqueue_style( 'sdm-styles', WP_PLUGIN_URL. '/simple_download_monitor/css/sdm_wp_styles.css' );
+	wp_enqueue_style( 'sdm-styles', WP_SIMPLE_DL_MONITOR_URL. '/css/sdm_wp_styles.css' );
 }
 
 function handle_sdm_download_via_direct_post() 
@@ -970,7 +974,7 @@ if($tiny_button_option != true) {
 	}
 	function sdm_downloads_add_button( $plugin_array ) {
 		
-		$plugin_array['sdm_downloads'] = WP_PLUGIN_URL. '/simple_download_monitor/tinymce/sdm_editor_plugin.js';
+		$plugin_array['sdm_downloads'] = WP_SIMPLE_DL_MONITOR_URL. '/tinymce/sdm_editor_plugin.js';
 		return $plugin_array;
 	}
 	function sdm_downloads_register_button( $buttons ) {
