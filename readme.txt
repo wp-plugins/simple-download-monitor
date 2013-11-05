@@ -4,7 +4,7 @@ Donate link: http://www.tipsandtricks-hq.com
 Tags: download, downloads, count, counter, tracker, tracking, hits, logging, monitor, manager, files, media, digital, download monitor
 Requires at least: 3.0
 Tested up to: 3.7.1
-Stable tag: 2.0
+Stable tag: 2.1
 License: GPLv2 or later
 
 Easily manage downloadable files and monitor downloads of your digital files from your WordPress site.
