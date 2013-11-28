@@ -1,67 +1,79 @@
 === Simple Download Monitor ===
 Contributors: Tips and Tricks HQ, Ruhul Amin, Josh
 Donate link: http://www.tipsandtricks-hq.com
-Tags: download, downloads, count, counter, tracker, tracking, hits, logging, monitor, manager, files, media, digital, download monitor
+Tags: download, downloads, count, counter, tracker, tracking, hits, logging, monitor, manager, files, media, digital, download monitor, download manager, file manager
 Requires at least: 3.0
 Tested up to: 3.7.1
-Stable tag: 2.1
+Stable tag: 2.2
 License: GPLv2 or later
 
 Easily manage downloadable files and monitor downloads of your digital files from your WordPress site.
 
 == Description ==
 
-I developed the Simple Download Monitor because I wanted to monitor the number of downloads of my files. 
+I developed the Simple Download Monitor plugin because I wanted to monitor the number of downloads of my files. 
 
-This plugin is very useful for tracking your digital file download counts.
+This plugin is very useful for managing and tracking your digital file download counts.
 
-You can configure downloadable files from your WordPress admin dashboard. Then allow your visitors to download the files and this plugin will monitor which files get downloaded how many times.
+You can configure downloadable files from your WordPress admin dashboard via an elegant user interface. Then allow your visitors to download the files and this plugin will monitor which files get downloaded how many times.
 
 The plugin will also log the IP addresses of the users who download your files.
 
-It has a very user-friendly interface for uploading, managing and tracking downloads.
+It has a very user-friendly interface for uploading, managing, monitoring and tracking file downloads.
 
 = Simple Download Monitor Features =
 
 * Add, edit and remove downloads from an easy to use interface
+* Drag and drop file uploads
 * Assign categories and tags to your downloadable files
 * Use shortcodes to display a download now button on a WordPress post/page
-* Option to use a nice looking template to show your download now button
-* Track the number of downloads for each of your files
+* Show a trackable download now button for your files anywhere on your site.
+* Download counter for each file.
+* Track IP addresses of the users who downloaded your files.
+* Track date and time of each file downloads.
+* Option to upload a thumbnail image for each of your downloadable files.
+* Option to use a nice looking template to show your download now buttons.
+* Ability to search and sort your downloadable files in the admin dashboard.
+* Track the number of downloads for each of your files.
+* Tinymce button in the WordPress post/page editor so you can easily add the shortcode.
+
+View more details on the [plugin page](http://www.tipsandtricks-hq.com/simple-wordpress-download-monitor-plugin)
 
 = Simple Download Monitor Plugin Usage =
 
 Once you have installed the plugin go to "Downloads->Settings" to configure some options
 
-**a)** Simple Download Monitor  Settings
+**A) Configure Download Monitor basic settings**
 
 * Admin Options: Remove Tinymce Button - Removes the SDM Downloads button from the WP content editor (default: unchecked).
 * Color Options: Download Button Color - Select a default color of the download button (default: green).
 
-**b)** Add a new download
+**B) Add a new download**
 
-To configure a new download follw these steps:
+To configure a new download follow these steps:
 
-1. Go to "Downloads->Add New"
+1. Go to "Downloads->Add New" interface in your WP admin
 1. Enter a title for your download
 1. Add a description for the download
-1. Select the file from your computer and upload it
+1. Select the file from your computer and upload it (or use an URL of the file)
 1. Select an image for the download (it will be displayed as a thumbnail on the front end)
 1. Publish it
 
-You can view all of your existing downloads from the "Downloads->Downloads" menu.
+You can view all of your existing downloads from the "Downloads->Downloads" interface.
 
-**c)** Create a download button
+**C) Create a download button**
 
-Create a new post/page and click the "SDM Downlaods" TinyMCE button to insert a shortcode (This button will only show up if you haven't unchecked it in the settings). You can choose to display your download with a nice looking box or just a download button. For example:
+Create a new post/page and click the "SDM Downlaods" TinyMCE button to insert a shortcode (This button will only show up if you haven't unchecked it in the settings). You can choose to display your download with a nice looking box or just a plain download link/button. 
+
+Example Shortcode Usage:
 
 `[sdm-download id="271" fancy="1"]`  (embed a download button inside a box with other information e.g. Thumbnail, Title and Description)
 
-`[sdm-download id="271" fancy="0"]`  (embed a plain download button)
+`[sdm-download id="271" fancy="0"]`  (embed a plain download button/link for a file)
 
-**d)** Download Logs
+**D) Download logs**
 
-You can check the download stats from the "Downloads->Logs" menu. It shows the number of downloads for a particular file, IP address of the user who downloaded it, date and time.
+You can check the download stats from the "Downloads->Logs" interface. It shows the number of downloads for each files, IP address of the user who downloaded it, date and time of the download.
 
 == Installation ==
 
@@ -73,14 +85,22 @@ You can check the download stats from the "Downloads->Logs" menu. It shows the n
 == Frequently Asked Questions ==
 
 = Can this plugin be used to offer free downloads to the users? =
-
 Yes.
+
+= What file formats can I upload? =
+You can pretty much upload all common file types.
+
+= Can I use external file URLs? = 
+Yes, you can use both local paths and external URLs.
 
 == Screenshots ==
 
 For screenshots please visit the plugin page
 
 == Changelog ==
+
+= 2.2 =
+* Fixed the plugin language translation issue. Now it can be translated to any language.
 
 = 2.1 = 
 * Minor bug fixes with the stylesheet file URL.
