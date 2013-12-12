@@ -1,10 +1,10 @@
 === Simple Download Monitor ===
-Contributors: Tips and Tricks HQ, Ruhul Amin, Josh
+Contributors: Tips and Tricks HQ, Ruhul Amin, josh401
 Donate link: http://www.tipsandtricks-hq.com
 Tags: download, downloads, count, counter, tracker, tracking, hits, logging, monitor, manager, files, media, digital, download monitor, download manager, file manager
 Requires at least: 3.0
-Tested up to: 3.7.1
-Stable tag: 2.2
+Tested up to: 3.8
+Stable tag: 2.3
 License: GPLv2 or later
 
 Easily manage downloadable files and monitor downloads of your digital files from your WordPress site.
@@ -95,9 +95,12 @@ Yes, you can use both local paths and external URLs.
 
 == Screenshots ==
 
-For screenshots please visit the plugin page
+For screenshots please visit the [download monitor plugin page](http://www.tipsandtricks-hq.com/simple-wordpress-download-monitor-plugin)
 
 == Changelog ==
+
+= 2.3 =
+* Wordpress 3.8 compatibility
 
 = 2.2 =
 * Fixed the plugin language translation issue. Now it can be translated to any language.

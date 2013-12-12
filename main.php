@@ -3,8 +3,8 @@
  * Plugin Name: Simple Download Monitor
  * Plugin URI: http://www.tipsandtricks-hq.com/development-center
  * Description: Easily manage downloadable files and monitor downloads of your digital files from your WordPress site.
- * Version: 2.2
- * Author: Tips and Tricks HQ, Ruhul Amin, Josh
+ * Version: 2.3
+ * Author: Tips and Tricks HQ, Ruhul Amin, Josh Lobe
  * Author URI: http://www.tipsandtricks-hq.com/development-center
  * License: GPL2
  */
@@ -14,7 +14,7 @@ define('WP_SIMPLE_DL_MONITOR_URL', plugins_url('',__FILE__));
 define('WP_SIMPLE_DL_MONITOR_PATH',plugin_dir_path( __FILE__ ));
 
 global $sdm_db_version;
-$sdm_db_version = '2.2';
+$sdm_db_version = '2.3';
 
 register_activation_hook(__FILE__, 'sdm_install_db_table' );
 function sdm_install_db_table() {
