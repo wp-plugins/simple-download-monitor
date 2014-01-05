@@ -4,7 +4,7 @@ Donate link: http://www.tipsandtricks-hq.com
 Tags: download, downloads, count, counter, tracker, tracking, hits, logging, monitor, manager, files, media, digital, download monitor, download manager, file manager
 Requires at least: 3.0
 Tested up to: 3.8
-Stable tag: 2.3
+Stable tag: 2.4
 License: GPLv2 or later
 
 Easily manage downloadable files and monitor downloads of your digital files from your WordPress site.
@@ -98,6 +98,9 @@ Yes, you can use both local paths and external URLs.
 For screenshots please visit the [download monitor plugin page](http://www.tipsandtricks-hq.com/simple-wordpress-download-monitor-plugin)
 
 == Changelog ==
+
+= 2.4 =
+* Fixed an issue with file download using external file URL.
 
 = 2.3 =
 * Wordpress 3.8 compatibility

@@ -3,7 +3,7 @@
  * Plugin Name: Simple Download Monitor
  * Plugin URI: http://www.tipsandtricks-hq.com/development-center
  * Description: Easily manage downloadable files and monitor downloads of your digital files from your WordPress site.
- * Version: 2.3
+ * Version: 2.4
  * Author: Tips and Tricks HQ, Ruhul Amin, Josh Lobe
  * Author URI: http://www.tipsandtricks-hq.com/development-center
  * License: GPL2
@@ -14,7 +14,7 @@ define('WP_SIMPLE_DL_MONITOR_URL', plugins_url('',__FILE__));
 define('WP_SIMPLE_DL_MONITOR_PATH',plugin_dir_path( __FILE__ ));
 
 global $sdm_db_version;
-$sdm_db_version = '2.3';
+$sdm_db_version = '2.4';
 
 register_activation_hook(__FILE__, 'sdm_install_db_table' );
 function sdm_install_db_table() {
@@ -842,7 +842,7 @@ function handle_sdm_download_via_direct_post()
 		$insert_table = $wpdb->insert( $table, $data );
 		
 		if ($insert_table) {//Download request was logged successfully
-			wp_safe_redirect($download_link);
+			sdm_redirect_to_url($download_link);
 		} 
 		else {//Failed to log the download request
 			wp_die ("Error! Failed to log the download request in the database table");
@@ -850,6 +850,23 @@ function handle_sdm_download_via_direct_post()
 		exit;
 	}
 } 
+
+function sdm_redirect_to_url($url,$delay='0',$exit='1')
+{
+	if(empty($url)){
+		echo "<strong>Error! The URL value is empty. Please specify a correct URL value to redirect to!</strong>";
+		exit;
+	}
+	if (!headers_sent()){
+		header('Location: ' . $url);
+	}
+	else{
+		echo '<meta http-equiv="refresh" content="'.$delay.';url='.$url.'" />';
+	}
+	if($exit == '1'){//exit
+		exit;
+	}
+}
 
 // Tinymce Button Populate Post ID's
 add_action( 'wp_ajax_nopriv_sdm_tiny_get_post_ids', 'sdm_tiny_get_post_ids_ajax_call' );
