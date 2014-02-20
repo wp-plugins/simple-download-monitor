@@ -105,6 +105,10 @@ For screenshots please visit the [download monitor plugin page](http://www.tipsa
 
 == Changelog ==
 
+= 2.5 =
+* Added a new feature to password protect a downloadable file.
+* Added a new shortcode to show the download count to your visitors.
+
 = 2.4 =
 * Fixed an issue with file download using external file URL.
 
