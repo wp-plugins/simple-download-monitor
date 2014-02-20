@@ -3,7 +3,7 @@
  * Plugin Name: Simple Download Monitor
  * Plugin URI: http://www.tipsandtricks-hq.com/development-center
  * Description: Easily manage downloadable files and monitor downloads of your digital files from your WordPress site.
- * Version: 2.4
+ * Version: 2.5
  * Author: Tips and Tricks HQ, Ruhul Amin, Josh Lobe
  * Author URI: http://www.tipsandtricks-hq.com/development-center
  * License: GPL2
@@ -14,7 +14,7 @@ define('WP_SIMPLE_DL_MONITOR_URL', plugins_url('',__FILE__));
 define('WP_SIMPLE_DL_MONITOR_PATH',plugin_dir_path( __FILE__ ));
 
 global $sdm_db_version;
-$sdm_db_version = '2.4';
+$sdm_db_version = '2.5';
 
 register_activation_hook(__FILE__, 'sdm_install_db_table' );
 function sdm_install_db_table() {
@@ -321,6 +321,11 @@ class simpleDownloadManager {
         <!-- End of settings page form -->
         </form>
         
+	 	<div style="background: none repeat scroll 0 0 #FFF6D5;border: 1px solid #D1B655;color: #3F2502;margin: 10px 0;padding: 5px 5px 5px 10px;text-shadow: 1px 1px #FFFFFF;">	
+	 	<p>If you need a feature rich and supported plugin for selling your digital items then checkout our <a href="http://www.tipsandtricks-hq.com/wordpress-estore-plugin-complete-solution-to-sell-digital-products-from-your-wordpress-blog-securely-1059" target="_blank">WP eStore Plugin</a>
+	    </p>
+	    </div>
+
         <?php
 		echo '</div></div>';//end of post-stuff
 		echo '</div>';//end of wrap
@@ -346,7 +351,7 @@ class simpleDownloadManager {
 			'sdm_downloads', 'normal', 'default'
 		);
 		add_meta_box('sdm_shortcode_meta_box', 
-			__('Shortcode', 'sdm_lang'), 
+			__('Shortcodes', 'sdm_lang'), 
 			array( &$this, 'display_sdm_shortcode_meta_box'), 
 			'sdm_downloads', 'normal', 'default'
 		);
@@ -409,8 +414,12 @@ class simpleDownloadManager {
 	public function display_sdm_shortcode_meta_box( $post ) {  // Shortcode metabox
 		
 		_e('This is the shortcode which can used on posts or pages to embed a download now button for this file. You can also use the shortcode inserter to add this shortcode to a post or page.','sdm_lang');
-		echo '<br /><br />';
+		echo '<br />';
 		echo '[sdm-download id="'.$post->ID.'" fancy="0"]';
+		echo '<br /><br />';
+		_e('This shortcode may be used as a download counter.', 'sdm_lang');
+		echo '<br />';
+		echo '[sdm-download-counter id="'.$post->ID.'"]';
 	}
 	
 	public function display_sdm_stats_meta_box( $post ) {  // Stats metabox
@@ -748,20 +757,25 @@ function sdm_create_logs_page(){
 }
 
 /*
-** Register Shortcode
+** Register Download Shortcode
 */
-add_action( 'init', 'sdm_register_shortcode' );
-function sdm_register_shortcode() {
+add_action( 'init', 'sdm_register_shortcodes' );
+function sdm_register_shortcodes() {
 	
-	add_shortcode('sdm-download', 'sdm_create_shortcode' );
+	add_shortcode('sdm-download', 'sdm_create_download_shortcode' );  // For download shortcode
+	add_shortcode('sdm-download-counter', 'sdm_create_counter_shortcode' );  // For counter shortcode
 }
-// Create Shortcode
-function sdm_create_shortcode( $atts ) {
+// Create Download Shortcode
+function sdm_create_download_shortcode( $atts ) {
 	
 	extract( shortcode_atts( array(
 		'id' => 'id',
 		'fancy' => '0'
 	), $atts ) );
+	
+	// Check to see if the download link cpt is password protected
+	$get_cpt_object = get_post($id);
+	$cpt_is_password = !empty($get_cpt_object->post_password) ? 'yes' : 'no';  // yes = download is password protected;
 	
 	// Get CPT thumbnail
 	$item_download_thumbnail = get_post_meta( $id, 'sdm_upload_thumbnail', true );
@@ -788,6 +802,10 @@ function sdm_create_shortcode( $atts ) {
 	$homepage = get_bloginfo('url');
 	$download_url = $homepage. '/?smd_process_download=1&download_id='.$id;
 	$download_button_code = '<a href="'.$download_url.'" class="sdm_download '.$def_color.'" title="'.$isset_item_title.'">'.__('Download Now!', 'sdm_lang').'</a>';
+	
+	if($cpt_is_password !== 'no'){//This is a password protected download so replace the download now button with password requirement
+		$download_button_code = sdm_get_password_entry_form($id);
+	}
 	//End of download now button code generation
 	
 	if ($fancy == '0') {
@@ -811,12 +829,47 @@ function sdm_create_shortcode( $atts ) {
 	}
 }
 
+function sdm_get_password_entry_form($id)
+{
+	$data = __('Enter Password to Download:','sdm_lang');
+	$data .= '<form method="post">';
+	$data .= '<input type="text" class="pass_text" /> ';
+	$data .= '<input type="button" class="pass_sumbit" value="'.__('Submit','sdm_lang').'" />';
+	$data .= '<input type="hidden" value="'.$id.'" />';
+	$data .= '</form>';
+	return $data;	
+}
+
+// Create Counter Shortcode
+function sdm_create_counter_shortcode( $atts ) {
+	
+	extract( shortcode_atts( array(
+		'id' => 'id'
+	), $atts ) );
+	
+	// Get number of downloads by counting db columns matching postID
+	global $wpdb;
+	$table = $wpdb->prefix.'sdm_downloads';
+	$wpdb->get_results($wpdb->prepare('SELECT * FROM '.$table.' WHERE post_id=%s', $id));
+	
+	// Return result
+	return $wpdb->num_rows.' '.__('Downloads','sdm_lang');
+}
+
+
+
 /*
 ** Register scripts for front-end posts/pages
 */
 add_action( 'wp_enqueue_scripts', 'sdm_wp_scripts' );
 function sdm_wp_scripts() {	
+
 	wp_enqueue_style( 'sdm-styles', WP_SIMPLE_DL_MONITOR_URL. '/css/sdm_wp_styles.css' );
+	wp_register_script('sdm-scripts', WP_SIMPLE_DL_MONITOR_URL. '/js/sdm_wp_scripts.js', array( 'jquery' ) );
+	wp_enqueue_script('sdm-scripts');
+	
+	// Localize ajax script for frontend
+	wp_localize_script( 'sdm-scripts', 'sdm_ajax_script', array( 'ajaxurl' => admin_url( 'admin-ajax.php' ) ) );
 }
 
 function handle_sdm_download_via_direct_post() 
@@ -904,7 +957,55 @@ function sdm_remove_thumbnail_image_ajax_call() {
 	echo $response;
 	exit;
 }
+// Check download password
+add_action( 'wp_ajax_nopriv_sdm_check_pass', 'sdm_check_pass_ajax_call' );
+add_action( 'wp_ajax_sdm_check_pass', 'sdm_check_pass_ajax_call' );
+function sdm_check_pass_ajax_call() {
+	
+	$button_id = $_POST['button_id'];  // Get button cpt id
+	$pass_val = $_POST['pass_val'];  // Get password attempt
+	$success = '';
+	$download_link = '';
+	
+	// Get post object
+	$post_object = get_post($button_id);
+	// Get post password
+	$post_pass = $post_object->post_password;
+	
+	// Check if password is a match
+	if($post_pass != $pass_val) { // Match is a failure
+	
+		$success = 'no';  // Pass back to ajax
+	}
+	else {  // Match is a success
+	
+		$success = 'yes';  // Pass back to ajax
+	
+		$download_id = $button_id;
+		$download_title = get_the_title( $download_id );
+		$download_link = get_post_meta( $download_id, 'sdm_upload', true );
+		$ipaddress = $_SERVER["REMOTE_ADDR"];
+		$date_time = current_time( 'mysql' );
+		
+		global $wpdb;
+		$table = $wpdb->prefix . 'sdm_downloads';
+		$data = array(
+					'post_id' => $download_id,
+					'post_title' => $download_title,
+					'file_url' => $download_link,
+					'visitor_ip' => $ipaddress,
+					'date_time' => $date_time
+				);
 
+		$insert_table = $wpdb->insert( $table, $data );
+	}
+		
+	// Generate ajax response
+	$response = json_encode( array( 'success' => $success, 'url' => $download_link ));
+	header( 'Content-Type: application/json' );
+	echo $response;
+	exit;
+}
 
 /*
 ** Setup Sortable Columns
