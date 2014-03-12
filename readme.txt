@@ -1,10 +1,10 @@
 === Simple Download Monitor ===
 Contributors: Tips and Tricks HQ, Ruhul Amin, josh401
 Donate link: http://www.tipsandtricks-hq.com
-Tags: download, downloads, count, counter, tracker, tracking, hits, logging, monitor, manager, files, media, digital, download monitor, download manager, file manager, protect downloads,
+Tags: download, downloads, count, counter, tracker, tracking, hits, logging, monitor, manager, files, media, digital, download monitor, download manager, file manager, protect downloads, download category,
 Requires at least: 3.0
 Tested up to: 3.8.1
-Stable tag: 2.5
+Stable tag: 2.6
 License: GPLv2 or later
 
 Easily manage downloadable files and monitor downloads of your digital files from your WordPress site.
@@ -42,6 +42,7 @@ http://www.youtube.com/watch?v=L-mXbs7kp0s
 * Ability to add the download now buttons to your sidebar widget.
 * Create password protected download now buttons. Users will only be able to download the file if they enter the correct password
 * Shortcode to show the download counter of a file. Use it to show off your file download count.
+* Shortcode to show all the downloads from a particular category.
 
 View more usage details on the [download monitor plugin](http://www.tipsandtricks-hq.com/simple-wordpress-download-monitor-plugin) page.
 
@@ -99,11 +100,24 @@ You can pretty much upload all common file types.
 = Can I use external file URLs? = 
 Yes, you can use both local paths and external URLs.
 
+= Can I password protect a downloadable file? = 
+Yes.
+
+= Can I show the file download counts to my visitors? =
+Yes.
+
+= Can I show all downloads from a category?
+yes.
+
 == Screenshots ==
 
 For screenshots please visit the [download monitor plugin page](http://www.tipsandtricks-hq.com/simple-wordpress-download-monitor-plugin)
 
 == Changelog ==
+
+= 2.6 =
+* Added a new shortcode to show all downloads from a download category.
+* Added a filter to handle the URL of SDM downloads post type.
 
 = 2.5 =
 * Added a new feature to password protect a downloadable file.

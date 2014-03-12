@@ -3,7 +3,7 @@
  * Plugin Name: Simple Download Monitor
  * Plugin URI: http://www.tipsandtricks-hq.com/development-center
  * Description: Easily manage downloadable files and monitor downloads of your digital files from your WordPress site.
- * Version: 2.5
+ * Version: 2.6
  * Author: Tips and Tricks HQ, Ruhul Amin, Josh Lobe
  * Author URI: http://www.tipsandtricks-hq.com/development-center
  * License: GPL2
@@ -14,8 +14,13 @@ define('WP_SIMPLE_DL_MONITOR_URL', plugins_url('',__FILE__));
 define('WP_SIMPLE_DL_MONITOR_PATH',plugin_dir_path( __FILE__ ));
 
 global $sdm_db_version;
-$sdm_db_version = '2.5';
+$sdm_db_version = '2.6';
 
+//File includes
+include_once('sdm-shortcodes.php');
+include_once('sdm-post-type-content-handler.php');
+
+//Activation hook handler
 register_activation_hook(__FILE__, 'sdm_install_db_table' );
 function sdm_install_db_table() {
 	
@@ -74,9 +79,11 @@ class simpleDownloadManager {
 	
 	public function __construct() {
 		
+                add_action( 'init', array( &$this, 'sdm_register_post_type' ));  // Create 'sdm_downloads' custom post type
+                add_action( 'init', array( &$this, 'sdm_create_taxonomies' ));  // Register 'tags' and 'categories' taxonomies
+                add_action( 'init', 'sdm_register_shortcodes' ); //Register the shortcodes
+                
 		if( is_admin()) {
-			add_action( 'init', array( &$this, 'sdm_register_post_type' ));  // Create 'sdm_downloads' custom post type
-			add_action( 'init', array( &$this, 'sdm_create_taxonomies' ));  // Register 'tags' and 'categories' taxonomies
 			add_action( 'admin_menu', array( &$this, 'sdm_create_menu_pages' ));  // Create admin pages
 			add_action( 'add_meta_boxes', array( &$this, 'sdm_create_upload_metabox' ));  // Create metaboxes
 			
@@ -383,7 +390,7 @@ class simpleDownloadManager {
         <br /><br />
 		<input id="upload_image_button" type="button" class="button-primary" value="Select File" />
         <span style="margin-left:40px;"></span>
-		<?php _e('File URL:', 'sdm_lang') ?> <input id="sdm_upload" type="text" size="150" name="sdm_upload" value="<?php echo $old_value; ?>" />
+		<?php _e('File URL:', 'sdm_lang') ?> <input id="sdm_upload" type="text" size="70" name="sdm_upload" value="<?php echo $old_value; ?>" />
         <?php
 		wp_nonce_field( 'sdm_upload_box_nonce', 'sdm_upload_box_nonce_check' );
 	}
@@ -400,11 +407,11 @@ class simpleDownloadManager {
 		<input id="upload_thumbnail_button" type="button" class="button-primary" value="<?php _e('Select Image', 'sdm_lang'); ?>" />
 		<input id="remove_thumbnail_button" type="button" class="button" value="<?php _e('Remove Image', 'sdm_lang'); ?>" />
         <span style="margin-left:40px;"></span>
-		<input id="sdm_upload_thumbnail" type="hidden" size="150" name="sdm_upload_thumbnail" value="<?php echo $old_value; ?>" />
+		<input id="sdm_upload_thumbnail" type="hidden" size="70" name="sdm_upload_thumbnail" value="<?php echo $old_value; ?>" />
         <span id="sdm_get_thumb">
         <?php 
 		if($old_value != '') {
-			?><img id="sdm_thumbnail_image" src="<?php echo $old_value; ?>" />
+			?><img id="sdm_thumbnail_image" src="<?php echo $old_value; ?>" style="width:75px;height:75px;" />
             <?php
 		}
 		?></span><?php
@@ -415,11 +422,12 @@ class simpleDownloadManager {
 		
 		_e('This is the shortcode which can used on posts or pages to embed a download now button for this file. You can also use the shortcode inserter to add this shortcode to a post or page.','sdm_lang');
 		echo '<br />';
-		echo '[sdm-download id="'.$post->ID.'" fancy="0"]';
+		echo '[sdm_download id="'.$post->ID.'" fancy="0"]';
 		echo '<br /><br />';
+		
 		_e('This shortcode may be used as a download counter.', 'sdm_lang');
 		echo '<br />';
-		echo '[sdm-download-counter id="'.$post->ID.'"]';
+		echo '[sdm_download_counter id="'.$post->ID.'"]';
 	}
 	
 	public function display_sdm_stats_meta_box( $post ) {  // Stats metabox
@@ -756,79 +764,6 @@ function sdm_create_logs_page(){
     <?php
 }
 
-/*
-** Register Download Shortcode
-*/
-add_action( 'init', 'sdm_register_shortcodes' );
-function sdm_register_shortcodes() {
-	
-	add_shortcode('sdm-download', 'sdm_create_download_shortcode' );  // For download shortcode
-	add_shortcode('sdm-download-counter', 'sdm_create_counter_shortcode' );  // For counter shortcode
-}
-// Create Download Shortcode
-function sdm_create_download_shortcode( $atts ) {
-	
-	extract( shortcode_atts( array(
-		'id' => 'id',
-		'fancy' => '0'
-	), $atts ) );
-	
-	// Check to see if the download link cpt is password protected
-	$get_cpt_object = get_post($id);
-	$cpt_is_password = !empty($get_cpt_object->post_password) ? 'yes' : 'no';  // yes = download is password protected;
-	
-	// Get CPT thumbnail
-	$item_download_thumbnail = get_post_meta( $id, 'sdm_upload_thumbnail', true );
-	$isset_download_thumbnail = isset($item_download_thumbnail) && !empty($item_download_thumbnail) ? '<img class="sdm_download_thumbnail_image" src="'.$item_download_thumbnail.'" />' : '';
-	
-	// Get CPT title
-	$item_title = get_the_title( $id );
-	$isset_item_title = isset($item_title) && !empty($item_title) ? $item_title : '';
-	
-	// Get CPT description
-	$item_description = get_post_meta( $id, 'sdm_description', true );
-	$isset_item_description = isset($item_description) && !empty($item_description) ? $item_description : '';
-	
-	// Get CPT download link
-	$item_link = get_post_meta( $id, 'sdm_upload', true );
-	$isset_item_link = isset($item_link) && !empty($item_link) ? $item_link : '';
-	
-	// See if user color option is selected
-	$main_opts = get_option('sdm_downloads_options');
-	$color_opt = $main_opts['download_button_color'];
-	$def_color = isset($color_opt) ? str_replace(' ', '', strtolower($color_opt)) : __('green', 'sdm_lang');
-	
-	//Generate the download now button code
-	$homepage = get_bloginfo('url');
-	$download_url = $homepage. '/?smd_process_download=1&download_id='.$id;
-	$download_button_code = '<a href="'.$download_url.'" class="sdm_download '.$def_color.'" title="'.$isset_item_title.'">'.__('Download Now!', 'sdm_lang').'</a>';
-	
-	if($cpt_is_password !== 'no'){//This is a password protected download so replace the download now button with password requirement
-		$download_button_code = sdm_get_password_entry_form($id);
-	}
-	//End of download now button code generation
-	
-	if ($fancy == '0') {
-		$data = '<div class="sdm_download_link">'.$download_button_code.'</div>';	
-		return $data;
-	}
-
-	if ($fancy == '1') {
-		// Prepare shortcode
-		$data = '<div class="sdm_download_item">';
-		$data .= '<div class="sdm_download_item_top">';
-		$data .= '<div class="sdm_download_thumbnail">'.$isset_download_thumbnail.'</div>';
-		$data .= '<div class="sdm_download_title">'.$isset_item_title.'</div>';
-		$data .= '</div>';//End of .sdm_download_item_top
-		$data .= '<div style="clear:both;"></div>';
-		$data .= '<div class="sdm_download_description">'.$isset_item_description.'</div>';
-		$data .= '<div class="sdm_download_link">'.$download_button_code.'</div>';
-		$data .= '</div>';
-		// Render shortcode
-		return $data;
-	}
-}
-
 function sdm_get_password_entry_form($id)
 {
 	$data = __('Enter Password to Download:','sdm_lang');
@@ -839,24 +774,6 @@ function sdm_get_password_entry_form($id)
 	$data .= '</form>';
 	return $data;	
 }
-
-// Create Counter Shortcode
-function sdm_create_counter_shortcode( $atts ) {
-	
-	extract( shortcode_atts( array(
-		'id' => 'id'
-	), $atts ) );
-	
-	// Get number of downloads by counting db columns matching postID
-	global $wpdb;
-	$table = $wpdb->prefix.'sdm_downloads';
-	$wpdb->get_results($wpdb->prepare('SELECT * FROM '.$table.' WHERE post_id=%s', $id));
-	
-	// Return result
-	return $wpdb->num_rows.' '.__('Downloads','sdm_lang');
-}
-
-
 
 /*
 ** Register scripts for front-end posts/pages
@@ -1045,8 +962,10 @@ function sdm_downloads_columns_content( $column_name, $post_ID ) {
 	
 	if ($column_name == 'sdm_downloads_thumbnail') { 
 		$old_thumbnail = get_post_meta( $post_ID, 'sdm_upload_thumbnail', true );
-		$old_value = isset($old_thumbnail) ? $old_thumbnail : '';
-		echo '<p class="sdm_downloads_count"><img src="'.$old_value.'" style="width:50px;height:50px;" /></p>';
+		//$old_value = isset($old_thumbnail) ? $old_thumbnail : '';
+		if($old_thumbnail) {
+			echo '<p class="sdm_downloads_count"><img src="'.$old_thumbnail.'" style="width:50px;height:50px;" /></p>';
+		}
 	}
 	if ($column_name == 'sdm_downloads_id') { 
 		echo '<p class="sdm_downloads_postid">'.$post_ID.'</p>';
