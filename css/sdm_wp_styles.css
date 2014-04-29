@@ -262,3 +262,9 @@
     -moz-box-shadow: 0 1px 1px #ebebeb, inset 0 1px 0 #f3f3f3;
     box-shadow: 0 1px 1px #ebebeb, inset 0 1px 0 #f3f3f3;
 }
+
+/* Ajax category file browser shortcode */
+.sdm_object_tree .sdm_post_title{
+    margin-right: 5px;
+    display: block;
+}

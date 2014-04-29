@@ -79,7 +79,8 @@ jQuery(function(){
 		},
 		function(response) {
 			if(response) {  // ** If response was successful
-				console.log(response.test);
+			
+				//console.log(response.test);
 				
 				jQuery.each(response.test, function (index, value) {
 					jQuery('#sdm_select').append('<option value="'+value.post_id+'">'+value.post_title+'</option>');  // Populate dropdown list with CPT item titles
@@ -93,22 +94,22 @@ jQuery(function(){
 				
 	// Instantiate a form in the wp thickbox window (hidden at start)		
     var form = jQuery('<div id="highlight-form"><div id="sdm_tinymce_postids" style="display:none;"></div>\
-						<div id="sdm_select_title" style="margin-top:20px;">Please select a Download Item:</div>\
+						<div id="sdm_select_title" style="margin-top:20px;">'+tinymce_langs.select_download_item+'</div>\
 						<table id="highlight-table" class="form-table" style="text-align: left">\
 							\
 							\
 						<tr>\
-						<th><label class="title" for="highlight-bg">Download Title</label></th>\
+						<th><label class="title" for="highlight-bg">'+tinymce_langs.download_title+'</label></th>\
 							<td><select name="sdm_select" id="sdm_select">\
 							</select><br />\
 						</tr>\
 						<tr>\
-						<th><label class="sdm_fancy" for "sdm_fancy_option">Include Fancy Box</th>\
+						<th><label class="sdm_fancy" for "sdm_fancy_option">'+tinymce_langs.include_fancy+'</th>\
 							<td><input type="checkbox" name="sdm_fancy_cb" id="sdm_fancy_cb" />\
 						</tr>\
 						</table>\
 						<p class="submit">\
-							<input type="button" id="sdm-tinymce-submit" class="button-primary" value="Insert SDM Shortcode" name="submit" style=""/>\
+							<input type="button" id="sdm-tinymce-submit" class="button-primary" value="'+tinymce_langs.insert_shortcode+'" name="submit" style=""/>\
 						</p>\
 						<p></p>\
 					   </div>');

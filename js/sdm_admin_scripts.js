@@ -41,10 +41,10 @@ jQuery(document).ready(function($){
 				if(response) {  // ** If response was successful
 					$('#sdm_thumbnail_image').remove();
 					$('#sdm_upload_thumbnail').val('');
-					alert('Image Successfully Removed');
+					alert(sdm_translations.image_removed);
 				} 
 				else {  // ** Else response was unsuccessful
-					alert('Error with AJAX');
+					alert(sdm_translations.ajax_error);
 				}
 			}
 		);

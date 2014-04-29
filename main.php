@@ -3,7 +3,7 @@
  * Plugin Name: Simple Download Monitor
  * Plugin URI: http://www.tipsandtricks-hq.com/development-center
  * Description: Easily manage downloadable files and monitor downloads of your digital files from your WordPress site.
- * Version: 2.6
+ * Version: 2.7
  * Author: Tips and Tricks HQ, Ruhul Amin, Josh Lobe
  * Author URI: http://www.tipsandtricks-hq.com/development-center
  * License: GPL2
@@ -82,6 +82,7 @@ class simpleDownloadManager {
                 add_action( 'init', array( &$this, 'sdm_register_post_type' ));  // Create 'sdm_downloads' custom post type
                 add_action( 'init', array( &$this, 'sdm_create_taxonomies' ));  // Register 'tags' and 'categories' taxonomies
                 add_action( 'init', 'sdm_register_shortcodes' ); //Register the shortcodes
+				add_action( 'wp_enqueue_scripts', array( &$this, 'sdm_frontend_scripts' ));  // Register frontend scripts
                 
 		if( is_admin()) {
 			add_action( 'admin_menu', array( &$this, 'sdm_create_menu_pages' ));  // Create admin pages
@@ -96,7 +97,7 @@ class simpleDownloadManager {
 			
 			add_action( 'admin_init', array( &$this, 'sdm_register_options' ));  // Register admin options
 			
-			add_filter( 'post_row_actions',array( &$this, 'sdm_remove_view_link_cpt' ));  // Remove 'View' link in CPT view
+			add_filter( 'post_row_actions',array( &$this, 'sdm_remove_view_link_cpt' ), 10, 2);  // Remove 'View' link in CPT view
 		}
 	}
 	
@@ -118,6 +119,13 @@ class simpleDownloadManager {
 			var sdm_del_thumb_postid = '<?php echo $post->ID; ?>';  
 			</script>
             <?php
+			
+			// Localize langauge strings used in js file
+			$sdmTranslations = array(
+				'image_removed' => __('Image Successfully Removed', 'sdm_lang'),
+				'ajax_error' => __('Error with AJAX', 'sdm_lang')
+			);
+			wp_localize_script( 'sdm-upload', 'sdm_translations', $sdmTranslations );
 		}
 		
 		// Pass admin ajax url
@@ -125,8 +133,20 @@ class simpleDownloadManager {
 		<script type="text/javascript">
 		var sdm_admin_ajax_url = { sdm_admin_ajax_url: '<?php echo admin_url('admin-ajax.php?action=ajax'); ?>' };
 		var sdm_plugin_url = '<?php echo plugins_url(); ?>';
+		var tinymce_langs = { select_download_item: '<?php _e('Please select a Download Item:', 'sdm_lang') ?>', download_title: '<?php _e('Download Title', 'sdm_lang') ?>', include_fancy: '<?php _e('Include Fancy Box', 'sdm_lang') ?>', insert_shortcode: '<?php _e('Insert SDM Shortcode', 'sdm_lang') ?>' };
 		</script>
 		<?php
+	}
+	
+	public function sdm_frontend_scripts() {
+		
+		// Pass language strings to frontend of WP for js usage
+		?>
+		<script type="text/javascript">
+		var sdm_frontend_translations = { incorrect_password: '<?php _e('Incorrect Password', 'sdm_lang') ?>' };
+		</script>
+		<?php
+		
 	}
 	
 	public function sdm_admin_styles() {
@@ -279,7 +299,7 @@ class simpleDownloadManager {
 		<h2><?php _e('Simple Download Monitor Settings Page', 'sdm_lang') ?></h2>
 
 		<div style="background: #FFF6D5; border: 1px solid #D1B655; color: #3F2502; padding: 15px 10px">
-		<a href="http://www.tipsandtricks-hq.com/development-center" target="_blank">Follow us</a> on Twitter, Google+ or via Email to stay upto date about the new features of this plugin.
+		<a href="http://www.tipsandtricks-hq.com/development-center" target="_blank"><?php _e('Follow us', 'sdm_lang'); ?></a> <?php _e('on Twitter, Google+ or via Email to stay upto date about the new features of this plugin.','sdm_lang'); ?>
 		</div>
 		
     	<!-- settings page form -->
@@ -329,7 +349,7 @@ class simpleDownloadManager {
         </form>
         
 	 	<div style="background: none repeat scroll 0 0 #FFF6D5;border: 1px solid #D1B655;color: #3F2502;margin: 10px 0;padding: 5px 5px 5px 10px;text-shadow: 1px 1px #FFFFFF;">	
-	 	<p>If you need a feature rich and supported plugin for selling your digital items then checkout our <a href="http://www.tipsandtricks-hq.com/wordpress-estore-plugin-complete-solution-to-sell-digital-products-from-your-wordpress-blog-securely-1059" target="_blank">WP eStore Plugin</a>
+	 	<p><?php _e('If you need a feature rich and supported plugin for selling your digital items then checkout our','sdm_lang'); ?> <a href="http://www.tipsandtricks-hq.com/wordpress-estore-plugin-complete-solution-to-sell-digital-products-from-your-wordpress-blog-securely-1059" target="_blank"><?php _e('WP eStore Plugin', 'sdm_lang'); ?></a>
 	    </p>
 	    </div>
 
@@ -388,7 +408,7 @@ class simpleDownloadManager {
 		_e('Click "Select File" to upload (or choose) the file.', 'sdm_lang');
 		?>
         <br /><br />
-		<input id="upload_image_button" type="button" class="button-primary" value="Select File" />
+		<input id="upload_image_button" type="button" class="button-primary" value="<?php _e('Select File', 'sdm_lang'); ?>" />
         <span style="margin-left:40px;"></span>
 		<?php _e('File URL:', 'sdm_lang') ?> <input id="sdm_upload" type="text" size="70" name="sdm_upload" value="<?php echo $old_value; ?>" />
         <?php
@@ -477,9 +497,13 @@ class simpleDownloadManager {
 		}
 	}
 	
-	public function sdm_remove_view_link_cpt( $action ) {
+	public function sdm_remove_view_link_cpt($action, $post) {
 		
-		unset ($action['view']);
+		// Only execute on SDM CPT posts page
+		if($post->post_type == 'sdm_downloads') {
+			unset ($action['view']);
+		}
+		
         return $action;
 	}
 	
@@ -509,7 +533,7 @@ class simpleDownloadManager {
 		$color_opts = array( __('Green','sdm_lang'), __('Blue','sdm_lang'),__('Purple','sdm_lang'),__('Teal','sdm_lang'),__('Dark Blue','sdm_lang'),__('Black','sdm_lang'),__('Grey','sdm_lang'),__('Pink','sdm_lang'),__('Orange','sdm_lang'),__('White','sdm_lang') );
 		echo '<select name="sdm_downloads_options[download_button_color]" id="download_button_color" class="sdm_opts_ajax_dropdowns">';
 		if(isset($color_opt)) {
-			echo '<option value="'.$color_opt.'" selected="selected">'.$color_opt.' (current)</option>';
+			echo '<option value="'.$color_opt.'" selected="selected">'.$color_opt.' ('.__('current', 'sdm_lang').')</option>';
 		}
 		foreach ($color_opts as $color) {
 			echo '<option value="'.$color.'" '.$sel_color.'>'.$color.'</option>';
@@ -543,8 +567,8 @@ class sdm_List_Table extends WP_List_Table {
                 
         //Set parent defaults
         parent::__construct( array(
-            'singular'  => 'Download',     //singular name of the listed records
-            'plural'    => 'Downloads',    //plural name of the listed records
+            'singular'  => __('Download', 'sdm_lang'),     //singular name of the listed records
+            'plural'    => __('Downloads', 'sdm_lang'),    //plural name of the listed records
             'ajax'      => false        //does this table support ajax?
         ) );
         
@@ -566,8 +590,8 @@ class sdm_List_Table extends WP_List_Table {
         
         //Build row actions
         $actions = array(
-			'edit'      => sprintf('<a href="'.admin_url( 'post.php?post='.$item['ID'].'&action=edit' ).'">Edit</a>'),
-            'delete'    => sprintf('<a href="?post_type=sdm_downloads&page=%s&action=%s&download=%s&datetime=%s">Delete</a>',$_REQUEST['page'],'delete',$item['ID'],$item['date'])
+			'edit'      => sprintf('<a href="'.admin_url( 'post.php?post='.$item['ID'].'&action=edit' ).'">'.__('Edit', 'sdm_lang').'</a>'),
+            'delete'    => sprintf('<a href="?post_type=sdm_downloads&page=%s&action=%s&download=%s&datetime=%s">'.__('Delete', 'sdm_lang').'</a>',$_REQUEST['page'],'delete',$item['ID'],$item['date'])
         );
         
         //Return the title contents
@@ -629,7 +653,7 @@ class sdm_List_Table extends WP_List_Table {
             $action = 'bulk-' . $this->_args['plural'];
 
             if ( ! wp_verify_nonce( $nonce, $action ) )
-                wp_die( 'Nope! Security check failed!' );
+                wp_die( __('Nope! Security check failed!', 'sdm_lang') );
 
         }
 
@@ -638,14 +662,14 @@ class sdm_List_Table extends WP_List_Table {
 		// If bulk 'Export All' was clicked
 		if( 'export_all' === $this->current_action() ) {
 			
-			echo '<div id="message" class="updated"><p><strong><a id="sdm_download_export" href="?post_type=sdm_downloads&page=logs&download_log">Download Export File</a></strong></p></div>';
+			echo '<div id="message" class="updated"><p><strong><a id="sdm_download_export" href="?post_type=sdm_downloads&page=logs&download_log">'.__('Download Export File', 'sdm_lang').'</a></strong></p></div>';
 		}
 		
 		// if bulk 'Delete Permanently' was clicked
 		if( 'delete2' === $this->current_action() ) {
 			
 			if( !isset($_POST['download']) || $_POST['download'] == null) {
-				echo '<div id="message" class="updated fade"><p><strong>No entries were selected.</strong></p><p><em>Click to Dismiss</em></p></div>';
+				echo '<div id="message" class="updated fade"><p><strong>'.__('No entries were selected.', 'sdm_lang').'</strong></p><p><em>'.__('Click to Dismiss', 'sdm_lang').'</em></p></div>';
 				return;
 			}
 			
@@ -661,10 +685,10 @@ class sdm_List_Table extends WP_List_Table {
 							);
 			}
 			if($del_row) {
-				echo '<div id="message" class="updated fade"><p><strong>Entries Deleted!</strong></p><p><em>Click to Dismiss</em></p></div>';
+				echo '<div id="message" class="updated fade"><p><strong>'.__('Entries Deleted!', 'sdm_lang').'</strong></p><p><em>'.__('Click to Dismiss', 'sdm_lang').'</em></p></div>';
 			}
 			else {
-				echo '<div id="message" class="updated fade"><p><strong>Error</strong></p><p><em>Click to Dismiss</em></p></div>';
+				echo '<div id="message" class="updated fade"><p><strong>'.__('Error', 'sdm_lang').'</strong></p><p><em>'.__('Click to Dismiss', 'sdm_lang').'</em></p></div>';
 			}
 		}
         
@@ -681,10 +705,10 @@ class sdm_List_Table extends WP_List_Table {
 								AND date_time = "'.$item_datetime.'"'
 						);
 			if($del_row) {
-				echo '<div id="message" class="updated fade"><p><strong>Entry Deleted!</strong></p><p><em>Click to Dismiss</em></p></div>';
+				echo '<div id="message" class="updated fade"><p><strong>'.__('Entry Deleted!', 'sdm_lang').'</strong></p><p><em>'.__('Click to Dismiss', 'sdm_lang').'</em></p></div>';
 			}
 			else {
-				echo '<div id="message" class="updated fade"><p><strong>Error</strong></p><p><em>Click to Dismiss</em></p></div>';
+				echo '<div id="message" class="updated fade"><p><strong>'.__('Error', 'sdm_lang').'</strong></p><p><em>'.__('Click to Dismiss', 'sdm_lang').'</em></p></div>';
 			}
         }
         
@@ -710,7 +734,7 @@ class sdm_List_Table extends WP_List_Table {
             return ($order==='asc') ? $result : -$result; //Send final sort direction to usort
         }
 		
-		$data_results = $wpdb->get_results($wpdb->prepare('SELECT * FROM '.$wpdb->prefix.'sdm_downloads', null ));
+		$data_results = $wpdb->get_results('SELECT * FROM '.$wpdb->prefix.'sdm_downloads');
 		$data = array();
 		foreach ($data_results as $data_result) {
 			$data[] = array( 'ID' => $data_result->post_id, 'title' => $data_result->post_title, 'URL' => $data_result->file_url, 'visitor_ip' => $data_result->visitor_ip, 'date' => $data_result->date_time );
@@ -768,7 +792,7 @@ function sdm_get_password_entry_form($id)
 {
 	$data = __('Enter Password to Download:','sdm_lang');
 	$data .= '<form method="post">';
-	$data .= '<input type="text" class="pass_text" /> ';
+	$data .= '<input type="password" class="pass_text" value="" /> ';
 	$data .= '<input type="button" class="pass_sumbit" value="'.__('Submit','sdm_lang').'" />';
 	$data .= '<input type="hidden" value="'.$id.'" />';
 	$data .= '</form>';
@@ -815,7 +839,7 @@ function handle_sdm_download_via_direct_post()
 			sdm_redirect_to_url($download_link);
 		} 
 		else {//Failed to log the download request
-			wp_die ("Error! Failed to log the download request in the database table");
+			wp_die ( __('Error! Failed to log the download request in the database table', 'sdm_lang') );
 		}
 		exit;
 	}
@@ -824,7 +848,9 @@ function handle_sdm_download_via_direct_post()
 function sdm_redirect_to_url($url,$delay='0',$exit='1')
 {
 	if(empty($url)){
-		echo "<strong>Error! The URL value is empty. Please specify a correct URL value to redirect to!</strong>";
+		echo '<strong>';
+		_e('Error! The URL value is empty. Please specify a correct URL value to redirect to!', 'sdm_lang');
+		echo '</strong>';
 		exit;
 	}
 	if (!headers_sent()){
@@ -919,6 +945,43 @@ function sdm_check_pass_ajax_call() {
 		
 	// Generate ajax response
 	$response = json_encode( array( 'success' => $success, 'url' => $download_link ));
+	header( 'Content-Type: application/json' );
+	echo $response;
+	exit;
+}
+// Populate category tree
+add_action( 'wp_ajax_nopriv_sdm_pop_cats', 'sdm_pop_cats_ajax_call' );
+add_action( 'wp_ajax_sdm_pop_cats', 'sdm_pop_cats_ajax_call' );
+function sdm_pop_cats_ajax_call() {
+	
+	$cat_slug = $_POST['cat_slug'];  // Get button cpt slug
+	$parent_id = $_POST['parent_id'];  // Get button cpt id
+	
+	// Query custom posts based on taxonomy slug
+	$posts = query_posts(array( 
+		'post_type' => 'sdm_downloads',
+		//'showposts' => -1,
+		'tax_query' => array(
+			array(
+				'taxonomy' => 'sdm_categories',
+				'terms' => $cat_slug,
+				'field' => 'slug',
+				'include_children' => 0
+			)
+		),
+		'orderby' => 'title',
+		'order' => 'ASC' )
+	);
+	
+	// Loop results
+	foreach($posts as $post) {
+		
+		// Create array of variables to pass to js
+		$final_array[] = array('id' => $post->ID, 'permalink' => get_permalink($post->ID), 'title' => $post->post_title);
+	}
+	
+	// Generate ajax response
+	$response = json_encode( array( 'final_array' => $final_array ));
 	header( 'Content-Type: application/json' );
 	echo $response;
 	exit;

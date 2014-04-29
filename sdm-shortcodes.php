@@ -10,6 +10,7 @@ function sdm_register_shortcodes() {
     add_shortcode('sdm-download-counter', 'sdm_create_counter_shortcode' );  // For counter shortcode
     add_shortcode('sdm_download_counter', 'sdm_create_counter_shortcode' );  // For counter shortcode (underscores)
     add_shortcode('sdm_show_dl_from_category', 'sdm_handle_category_shortcode' ); //For category shortcode
+    add_shortcode('sdm_download_categories', 'sdm_download_categories_shortcode' );// Ajax file tree browser
 }
 
 // Create Download Shortcode
@@ -107,11 +108,11 @@ function sdm_handle_category_shortcode($args){
 
 	// If category slug and category id are empty.. return error
     if(empty($category_slug) && empty($category_id)){
-        return '<p style="color: red;">Error! You must enter a category slug OR a category id with this shortcode. Refer to the documentation for usage instruction.</p>';
+        return '<p style="color: red;">'.__('Error! You must enter a category slug OR a category id with this shortcode. Refer to the documentation for usage instructions.', 'sdm_lang').'</p>';
     }
 	// Else if both category slug AND category id are defined... return error
 	else if(!empty($category_slug) && !empty($category_id)) {
-		return '<p style="color: red;">Error! Please enter a category slug OR id; not both.</p>';
+		return '<p style="color: red;">'.__('Error! Please enter a category slug OR id; not both.', 'sdm_lang').'</p>';
 	} 
 	// Else setup query arguments for category_slug
 	else if(!empty($category_slug) && empty($category_id)) { 
@@ -141,7 +142,7 @@ function sdm_handle_category_shortcode($args){
 		
 	// If no cpt's are found
 	if(!$get_posts) {
-		return '<p style="color: red;">There are no download items matching this category criteria.</p>';
+		return '<p style="color: red;">'.__('There are no download items matching this category criteria.', 'sdm_lang').'</p>';
 	}
 	// Else iterate cpt's
 	else {
@@ -205,4 +206,31 @@ function sdm_handle_category_shortcode($args){
 		
     
     exit;
+}
+
+// Create category tree shortcode
+function sdm_download_categories_shortcode() {
+
+	function custom_taxonomy_walker($taxonomy, $parent = 0) {
+            
+		// Get terms (check if has parent)
+		$terms = get_terms($taxonomy, array('parent' => $parent, 'hide_empty' => false));
+		
+		// If there are terms, start displaying
+		if(count($terms) > 0) {
+			// Displaying as a list
+			$out = '<ul>';
+			// Cycle though the terms
+			foreach ($terms as $term) {
+				// Secret sauce.  Function calls itself to display child elements, if any
+				$out .= '<li class="sdm_cat" id="'.$term->slug.'"><span id="'.$term->term_id.'" class="sdm_cat_title" style="cursor:pointer;">' . $term->name .'</span>';
+                                $out .= '<p class="sdm_placeholder" style="margin-bottom:0;"></p>' . custom_taxonomy_walker($taxonomy, $term->term_id);
+                                $out .= '</li>'; 
+			}
+			$out .= '</ul>';    
+			return $out;
+		}
+		return;
+	}
+	return '<div class="sdm_object_tree">'.custom_taxonomy_walker('sdm_categories').'</div>';
 }
