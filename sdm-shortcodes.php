@@ -36,7 +36,8 @@ function sdm_create_download_shortcode( $atts ) {
 	// Get CPT description
 	$item_description = get_post_meta( $id, 'sdm_description', true );
 	$isset_item_description = isset($item_description) && !empty($item_description) ? $item_description : '';
-	
+	$isset_item_description = do_shortcode($isset_item_description);
+        
 	// Get CPT download link
 	$item_link = get_post_meta( $id, 'sdm_upload', true );
 	$isset_item_link = isset($item_link) && !empty($item_link) ? $item_link : '';
@@ -46,6 +47,9 @@ function sdm_create_download_shortcode( $atts ) {
 	$color_opt = $main_opts['download_button_color'];
 	$def_color = isset($color_opt) ? str_replace(' ', '', strtolower($color_opt)) : __('green', 'sdm_lang');
 	
+        //Download counter
+        //$dl_counter = sdm_create_counter_shortcode(array('id'=>$id));
+        
 	//Generate the download now button code
 	$homepage = get_bloginfo('url');
 	$download_url = $homepage. '/?smd_process_download=1&download_id='.$id;
@@ -69,7 +73,7 @@ function sdm_create_download_shortcode( $atts ) {
 		$data .= '<div class="sdm_download_title">'.$isset_item_title.'</div>';
 		$data .= '</div>';//End of .sdm_download_item_top
 		$data .= '<div style="clear:both;"></div>';
-		$data .= '<div class="sdm_download_description">'.$isset_item_description.'</div>';
+		$data .= '<div class="sdm_download_description">'.$isset_item_description.'</div>';                
 		$data .= '<div class="sdm_download_link">'.$download_button_code.'</div>';
 		$data .= '</div>';
 		// Render shortcode
@@ -131,6 +135,7 @@ function sdm_handle_category_shortcode($args){
 	$get_posts = get_posts(array(
 		'post_type' => 'sdm_downloads',
 		'show_posts' => -1,
+                'posts_per_page' => 9999,
 		'tax_query' => array(
 			array(
 				'taxonomy' => 'sdm_categories',

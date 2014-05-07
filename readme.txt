@@ -1,10 +1,10 @@
 === Simple Download Monitor ===
 Contributors: Tips and Tricks HQ, Ruhul Amin, josh401
 Donate link: http://www.tipsandtricks-hq.com
-Tags: download, downloads, count, counter, tracker, tracking, hits, logging, monitor, manager, files, media, digital, download monitor, download manager, downloadmanager, file manager, protect downloads, download category, file tree, ajax,
+Tags: download, downloads, count, counter, tracker, tracking, hits, logging, monitor, manager, files, media, digital, download monitor, download manager, downloadmanager, file manager, protect downloads, download category, file tree, ajax, password,
 Requires at least: 3.0
 Tested up to: 3.9
-Stable tag: 2.7
+Stable tag: 2.8
 License: GPLv2 or later
 
 Easily manage downloadable files and monitor downloads of your digital files from your WordPress site.
@@ -124,6 +124,11 @@ Yes.
 For screenshots please visit the [download monitor plugin page](http://www.tipsandtricks-hq.com/simple-wordpress-download-monitor-plugin)
 
 == Changelog ==
+
+= 2.8 = 
+* Added the ability to use shortcodes in the description area of the downloads. For example: you can use the download counter shortcode in the description field to show the current counter to your visitors.
+* Bug-fix for the "show downloads from a category" shortcode. It will now correctly show all items in a download category.
+* Added a better dashicons icon for the downloads menu in the admin dashborad.
 
 = 2.7 =
 * Added a new feature to show an ajax file tree browser.
