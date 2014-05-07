@@ -1,7 +1,7 @@
 === Simple Download Monitor ===
 Contributors: Tips and Tricks HQ, Ruhul Amin, josh401
 Donate link: http://www.tipsandtricks-hq.com
-Tags: download, downloads, count, counter, tracker, tracking, hits, logging, monitor, manager, files, media, digital, download monitor, download manager, downloadmanager, file manager, protect downloads, download category, file tree, ajax, password,
+Tags: download, downloads, count, counter, tracker, tracking, hits, logging, monitor, manager, files, media, digital, download monitor, download manager, downloadmanager, file manager, protect downloads, download category, file tree, ajax, password
 Requires at least: 3.0
 Tested up to: 3.9
 Stable tag: 2.8
