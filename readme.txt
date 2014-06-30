@@ -1,10 +1,10 @@
 === Simple Download Monitor ===
 Contributors: Tips and Tricks HQ, Ruhul Amin, josh401
 Donate link: http://www.tipsandtricks-hq.com
-Tags: download, downloads, count, counter, tracker, tracking, hits, logging, monitor, manager, files, media, digital, download monitor, download manager, downloadmanager, file manager, protect downloads, download category, file tree, ajax, password
+Tags: download, downloads, count, counter, tracker, tracking, hits, logging, monitor, manager, files, media, digital, download monitor, download manager, downloadmanager, file manager, protect downloads, password, download category, file tree, ajax,
 Requires at least: 3.0
 Tested up to: 3.9
-Stable tag: 2.8
+Stable tag: 2.9
 License: GPLv2 or later
 
 Easily manage downloadable files and monitor downloads of your digital files from your WordPress site.
@@ -41,6 +41,7 @@ http://www.youtube.com/watch?v=L-mXbs7kp0s
 * Option to use a nice looking template to show your download now buttons.
 * Ability to search and sort your downloadable files in the admin dashboard.
 * Track the number of downloads for each of your files.
+* Track the visitors country.
 * WordPress Shortcode for embedding a download link for a file.
 * Tinymce button in the WordPress post/page editor so you can easily add the shortcode.
 * Ability to add the download now buttons to your sidebar widget.
@@ -124,6 +125,10 @@ Yes.
 For screenshots please visit the [download monitor plugin page](http://www.tipsandtricks-hq.com/simple-wordpress-download-monitor-plugin)
 
 == Changelog ==
+
+= 2.9 =
+* Added visitor Country to database table; allowing tracking of each download visitors Country.
+* Visitor Country is also seen in the "Logs" page; can be sorted; and exported.
 
 = 2.8 = 
 * Added the ability to use shortcodes in the description area of the downloads. For example: you can use the download counter shortcode in the description field to show the current counter to your visitors.
