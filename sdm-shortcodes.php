@@ -18,7 +18,9 @@ function sdm_create_download_shortcode( $atts ) {
 	
 	extract( shortcode_atts( array(
 		'id' => 'id',
-		'fancy' => '0'
+		'fancy' => '0',
+                'button_text' => '',
+                'new_window' => '',
 	), $atts ) );
 	
 	// Check to see if the download link cpt is password protected
@@ -50,10 +52,19 @@ function sdm_create_download_shortcode( $atts ) {
         //Download counter
         //$dl_counter = sdm_create_counter_shortcode(array('id'=>$id));
         
-	//Generate the download now button code
+	//*** Generate the download now button code ***
+        $window_target = '';
+        if(!empty($new_window)){
+            $window_target = 'target="_blank"';
+        }   
+        if(empty($button_text)){//Use the default text for the button
+            $button_text_string = __('Download Now!', 'sdm_lang');
+        }else{//Use the custom text
+            $button_text_string = $button_text;
+        }
 	$homepage = get_bloginfo('url');
 	$download_url = $homepage. '/?smd_process_download=1&download_id='.$id;
-	$download_button_code = '<a href="'.$download_url.'" class="sdm_download '.$def_color.'" title="'.$isset_item_title.'">'.__('Download Now!', 'sdm_lang').'</a>';
+	$download_button_code = '<a href="'.$download_url.'" class="sdm_download '.$def_color.'" title="'.$isset_item_title.'" '.$window_target.'>'.$button_text_string.'</a>';
 	
 	if($cpt_is_password !== 'no'){//This is a password protected download so replace the download now button with password requirement
 		$download_button_code = sdm_get_password_entry_form($id);
@@ -92,9 +103,22 @@ function sdm_create_counter_shortcode( $atts ) {
 	global $wpdb;
 	$table = $wpdb->prefix.'sdm_downloads';
 	$wpdb->get_results($wpdb->prepare('SELECT * FROM '.$table.' WHERE post_id=%s', $id));
+	// Count database rows
+	$db_count = $wpdb->num_rows;
+	
+	// Check post meta to see if we need to offset the count before displaying to viewers
+	$get_offset = get_post_meta( $id, 'sdm_count_offset', true );
+	
+	if($get_offset && $get_offset != '') {
+		
+		$db_count = $db_count + $get_offset;
+	}
+	
+	// Set string for singular/plural results
+	$string = ($db_count == '1') ? __('Download','sdm_lang') : __('Downloads','sdm_lang');
 	
 	// Return result
-	return $wpdb->num_rows.' '.__('Downloads','sdm_lang');
+	return $db_count.' '.$string;
 }
 
 // Create Category Shortcode
@@ -103,7 +127,9 @@ function sdm_handle_category_shortcode($args){
     extract( shortcode_atts( array(
             'category_slug' => '',
             'category_id' => '',
-            'fancy' => '0'
+            'fancy' => '0',
+            'button_text' => '',
+            'new_window' => '',
     ), $args ) );
 	
 	// Define vars
@@ -161,6 +187,17 @@ function sdm_handle_category_shortcode($args){
 		$color_opt = $main_opts['download_button_color'];
 		$def_color = isset($color_opt) ? str_replace(' ', '', strtolower($color_opt)) : __('green', 'sdm_lang');
 		
+                $window_target = '';
+                if(!empty($new_window)){
+                    $window_target = 'target="_blank"';
+                }
+                
+                if(empty($button_text)){//Use the default text for the button
+                    $button_text_string = __('Download Now!', 'sdm_lang');
+                }else{//Use the custom text
+                    $button_text_string = $button_text;
+                }
+                
 		// Iterate cpt's
 		foreach ($get_posts as $item) {
 			
@@ -181,7 +218,7 @@ function sdm_handle_category_shortcode($args){
 			$isset_item_description = isset($item_description) && !empty($item_description) ? $item_description : '';
 			
 			// Setup download button code
-			$download_button_code = '<a href="'.$download_url.'" class="sdm_download '.$def_color.'" title="'.$isset_item_title.'">'.__('Download Now!', 'sdm_lang').'</a>';
+			$download_button_code = '<a href="'.$download_url.'" class="sdm_download '.$def_color.'" title="'.$isset_item_title.'" '.$window_target.'>'.$button_text_string.'</a>';
 		
 			// Generate download buttons
 			if ($fancy == '0') {
