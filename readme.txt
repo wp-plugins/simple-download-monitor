@@ -4,7 +4,7 @@ Donate link: http://www.tipsandtricks-hq.com
 Tags: download, downloads, count, counter, tracker, tracking, hits, logging, monitor, manager, files, media, digital, download monitor, download manager, downloadmanager, file manager, protect downloads, password, download category, file tree, ajax, download template
 Requires at least: 3.0
 Tested up to: 3.9.1
-Stable tag: 3.1
+Stable tag: 3.1.1
 License: GPLv2 or later
 
 Easily manage downloadable files and monitor downloads of your digital files from your WordPress site.
@@ -52,13 +52,13 @@ http://www.youtube.com/watch?v=L-mXbs7kp0s
 * Shortcode to show all the downloads from a particular category.
 * Shortcode to embed a file tree browser for your downloadable files. The file browser is ajax based and it shows the files structured by categories.
 * Ability to open the downloads in new browser window or tab. When your users click on a download button, it will open in a new window or tab.
-* Ability to show your downloads in a grid display.
+* Ability to show your downloads in a grid display. [View the tutorial](http://www.tipsandtricks-hq.com/show-file-downloads-in-a-nice-grid-display-7273)
 
 View more details on the [download monitor plugin](http://www.tipsandtricks-hq.com/simple-wordpress-download-monitor-plugin) page.
 
 = Simple Download Monitor Plugin Usage =
 
-Once you have installed the plugin go to "Downloads->Settings" to configure some options
+Once you have installed the plugin, go to "Downloads -> Settings" interface to configure some options
 
 **A) Configure Download Monitor basic settings**
 
@@ -129,6 +129,9 @@ Yes.
 For screenshots please visit the [download monitor plugin page](http://www.tipsandtricks-hq.com/simple-wordpress-download-monitor-plugin)
 
 == Changelog ==
+
+= 3.1.1 =
+- Fixed a bug with the file download password entry field.
 
 = 3.1 =
 - Added a new fancy template to display the downloads.
