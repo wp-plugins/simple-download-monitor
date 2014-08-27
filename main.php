@@ -1,18 +1,18 @@
 <?php
 /**
  * Plugin Name: Simple Download Monitor
- * Plugin URI: http://www.tipsandtricks-hq.com/simple-wordpress-download-monitor-plugin
+ * Plugin URI: https://www.tipsandtricks-hq.com/simple-wordpress-download-monitor-plugin
  * Description: Easily manage downloadable files and monitor downloads of your digital files from your WordPress site.
- * Version: 3.1.2
+ * Version: 3.1.3
  * Author: Tips and Tricks HQ, Ruhul Amin, Josh Lobe
- * Author URI: http://www.tipsandtricks-hq.com/development-center
+ * Author URI: https://www.tipsandtricks-hq.com/development-center
  * License: GPL2
  */
 if (!defined('ABSPATH')) {
     exit;
 }
 
-define('WP_SIMPLE_DL_MONITOR_VERSION', '3.1.2');
+define('WP_SIMPLE_DL_MONITOR_VERSION', '3.1.3');
 define('WP_SIMPLE_DL_MONITOR_DIR_NAME', dirname(plugin_basename(__FILE__)));
 define('WP_SIMPLE_DL_MONITOR_URL', plugins_url('', __FILE__));
 define('WP_SIMPLE_DL_MONITOR_PATH', plugin_dir_path(__FILE__));
@@ -397,9 +397,9 @@ class simpleDownloadManager {
         echo '<br /><br />';
 
         $old_description = get_post_meta($post->ID, 'sdm_description', true);
-        ?>
-        <textarea id="sdm_description" name="sdm_description" style="width:60%;height:40px;"><?php echo $old_description; ?></textarea>
-        <?php
+        $sdm_description_field = array('textarea_name' => 'sdm_description');
+        wp_editor($old_description, "sdm_description_editor_content", $sdm_description_field);
+        
         wp_nonce_field('sdm_description_box_nonce', 'sdm_description_box_nonce_check');
     }
 
