@@ -3,7 +3,7 @@
  * Plugin Name: Simple Download Monitor
  * Plugin URI: https://www.tipsandtricks-hq.com/simple-wordpress-download-monitor-plugin
  * Description: Easily manage downloadable files and monitor downloads of your digital files from your WordPress site.
- * Version: 3.1.4
+ * Version: 3.1.5
  * Author: Tips and Tricks HQ, Ruhul Amin, Josh Lobe
  * Author URI: https://www.tipsandtricks-hq.com/development-center
  * License: GPL2
@@ -13,10 +13,11 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('WP_SIMPLE_DL_MONITOR_VERSION', '3.1.4');
+define('WP_SIMPLE_DL_MONITOR_VERSION', '3.1.5');
 define('WP_SIMPLE_DL_MONITOR_DIR_NAME', dirname(plugin_basename(__FILE__)));
 define('WP_SIMPLE_DL_MONITOR_URL', plugins_url('', __FILE__));
 define('WP_SIMPLE_DL_MONITOR_PATH', plugin_dir_path(__FILE__));
+define('WP_SIMPLE_DL_MONITOR_SITE_HOME_URL', home_url());
 
 global $sdm_db_version;
 $sdm_db_version = '1.2';
@@ -24,6 +25,7 @@ $sdm_db_version = '1.2';
 //File includes
 include_once('includes/sdm-utility-functions.php');
 include_once('includes/sdm-logs-list-table.php');
+include_once('includes/sdm-latest-downloads.php');
 include_once('sdm-shortcodes.php');
 include_once('sdm-post-type-content-handler.php');
 
@@ -53,6 +55,9 @@ function sdm_install_db_table() {
     dbDelta($sql);
 
     update_option('sdm_db_version', $sdm_db_version);
+    
+    // Flush rules after install/activation
+    flush_rewrite_rules();
 }
 
 function sdm_db_update_check() {
@@ -196,6 +201,9 @@ class simpleDownloadManager {
             'parent_item_colon' => __('Parent Download', 'sdm_lang'),
             'menu_name' => __('Downloads', 'sdm_lang')
         );
+        
+        $sdm_permalink_base = 'sdm_downloads';//TODO - add an option to configure in the settings maybe?
+        $sdm_slug = untrailingslashit( $sdm_permalink_base );
         $args = array(
             'labels' => $labels,
             'public' => true,
@@ -203,7 +211,7 @@ class simpleDownloadManager {
             'show_ui' => true,
             'show_in_menu' => true,
             'query_var' => true,
-            'rewrite' => array('slug' => 'sdm_downloads'),
+            'rewrite' => array('slug' => $sdm_slug),
             'capability_type' => 'post',
             'has_archive' => true,
             'hierarchical' => false,
@@ -211,7 +219,8 @@ class simpleDownloadManager {
             'menu_icon' => 'dashicons-download',
             'supports' => array('title')
         );
-        register_post_type('sdm_downloads', $args);
+        register_post_type('sdm_downloads', $args);        
+
     }
 
     public function sdm_create_taxonomies() {
